@@ -12,7 +12,7 @@
   <div class="row mx-auto">
     <div class="col-12 col-md-8 col-xl-6 pb-4">
       <div class="card rounded-0">
-        <img src="{{ (vendor.profilePictureLink or url_for('static', filename='images/averie-woodard-4nulm-JUYFo-unsplash.jpg')) }}"
+        <img src="{{ ( url_for('static', filename='img/' + vendor.image)) }}"
              alt="{{ vendor.artisticName if vendor else 'Vendor profile' }}">
       </div>
     </div>
@@ -49,3 +49,4 @@
   {% endfor %}
 </div>
 {% endblock %}
+
