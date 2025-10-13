@@ -142,11 +142,11 @@ INSERT INTO admins (admin_id, username, admin_password) VALUES
 
 INSERT INTO vendors (vendor_id, email, phone, vendor_password, firstName, lastName, address_id, artisticName, bio, profilePictureLink) VALUES
 (1,'loremipsum@project582.com','0401000001','hashA','Lorem','Ipsum',6,'LorIp','Abstracts from Brisbane River.','averie-woodard-4nulm-JUYFo-unsplash.jpg'),
-(2,'dolorsitamet@project582.com','0401000002','hashB','Dolor','Sit Amet',5,'DodoSA','Minimalist line drawings','/img/charlie-green-3JmfENcL24M-unsplash.jpg'),
-(3,'sedvitae@project582.com','0401000003','hashC','Sed','Vitae',4,'S-Vit','Limited prints.','/img/raamin-ka-uR51HXLO7G0-unsplash.jpg'),
-(4,'namiabortis@project582.com','0401000004','hashD','Nam','Iobortis',3,'NamIo','Original only.','/img/vicky-hladynets-uyaTT9u6AvI-unsplash.jpg'),
-(5,'utvulputate@project582.com','0401000005','hashE','Ut','Vulputate',2,'Utate','An intimate gallery.','/img/tamara-bellis-JoKS3XweV50-unsplash.jpg'),
-(6,'nullaeget@project582.com','0401000006','hashF','Nulla','Eget',1,'Mr. Eget','Abstracts from Toowoomba.','/img/cord-allman-qMK2NZXIhP0-unsplash.jpg');
+(2,'dolorsitamet@project582.com','0401000002','hashB','Dolor','Sit Amet',5,'DodoSA','Minimalist line drawings','charlie-green-3JmfENcL24M-unsplash.jpg'),
+(3,'sedvitae@project582.com','0401000003','hashC','Sed','Vitae',4,'S-Vit','Limited prints.','raamin-ka-uR51HXLO7G0-unsplash.jpg'),
+(4,'namiabortis@project582.com','0401000004','hashD','Nam','Iobortis',3,'NamIo','Original only.','vicky-hladynets-uyaTT9u6AvI-unsplash.jpg'),
+(5,'utvulputate@project582.com','0401000005','hashE','Ut','Vulputate',2,'Utate','An intimate gallery.','tamara-bellis-JoKS3XweV50-unsplash.jpg'),
+(6,'nullaeget@project582.com','0401000006','hashF','Nulla','Eget',1,'Mr. Eget','Abstracts from Toowoomba.','cord-allman-qMK2NZXIhP0-unsplash.jpg');
 
 INSERT INTO customers (customer_id, email, phone, customer_password, firstName, lastName, address_id, newsletterSubscription) VALUES
 (1,'dusty@example.com','0411000001','123456','Dusty','Lee',7,0),
@@ -190,3 +190,4 @@ VALUES (3, 1, 'Confirmed', '2025-08-15 14:30:00', 3, 3);
 
 INSERT INTO order_item (orderItem_id, order_id, artwork_id, quantity, rentalDuration, unitPrice)
 VALUES (3, 3, 13, 1, 1, 15.00);    -- purchase (treated as 1 period for consistency)
+
