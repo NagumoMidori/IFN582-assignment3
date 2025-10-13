@@ -55,7 +55,7 @@
       {% for v in vendors %}
       <div class="col-6 col-md-4 col-xl-2 pb-4 position-relative">
         <div class="card rounded-0">
-          <img src="{{v.profilePictureLink or url_for('static', filename='img/' + vendor.image)}}" alt="">
+          <img src="{{ url_for('static', filename='img/' + v.profilePictureLink)}}" alt="">
           <div class="card-header colour__vendor rounded-0">
             <a href="{{ url_for('main.vendor_gallery', vendor_id=v.vendor_id) }}"
                class="stretched-link text-decoration-none text-reset">
@@ -159,3 +159,4 @@
   </div>
 </form>
 {% endblock %}
+
