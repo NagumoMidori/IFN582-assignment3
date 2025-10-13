@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set active_page = 'cart' %}
+{% block title %}Your Cart — Art Lease Gallery{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Your Cart</h1>
+
+{% if cart.items %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Item</th><th>Qty</th><th>Weeks</th>
+        <th class="text-end">Unit (AUD)</th>
+        <th class="text-end">Line total</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for li in cart.items %}
+      <tr>
+        <td>
+          <div class="flex gap-3 items-center">
+            <img src="{{ li.artwork.imageLink }}" alt="{{ li.artwork.title }}" class="thumb">
+            <div>
+              <div><a href="{{ url_for('main.item_details', artwork_id=li.artwork_id) }}">{{ li.artwork.title }}</a></div>
+              <small class="muted">Status: {{ li.artwork.availabilityStatus }}</small>
+            </div>
+          </div>
+        </td>
+        <td>{{ li.quantity }}</td>
+        <td>{{ li.rentalDuration or 1 }}</td>
+        <td class="text-end">${{ '%.2f'|format(li.unitPrice) }}</td>
+        <td class="text-end">${{ '%.2f'|format(li.line_total()) }}</td>
+        <td class="text-end">
+          <form action="{{ url_for('main.cart_remove', item_id=li.cartItem_id) }}" method="post">
+            {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+            <button class="btn btn-ghost" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" class="text-end fw-bold">Total</td>
+        <td class="text-end fw-bold">${{ '%.2f'|format(cart.total()) }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="flex justify-between mt-3">
+    <form action="{{ url_for('main.cart_clear') }}" method="post">
+      {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+      <button class="btn btn-secondary" type="submit">Clear cart</button>
+    </form>
+    <a class="btn colour__button__2" href="{{ url_for('main.checkout') }}">Proceed to checkout</a>
+  </div>
+{% else %}
+  <p>Your cart is empty. <a href="{{ url_for('main.index') }}">Continue shopping</a>.</p>
+{% endif %}
+{% endblock %}

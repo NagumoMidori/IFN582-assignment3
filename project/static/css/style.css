@@ -1,0 +1,207 @@
+.nav__colour {
+    background-color: #60435F;
+}
+
+.colour__header {
+    color: #60435F;
+}
+
+.carousel__text__box {
+    color: #FDF7FA;
+    background-color: #60435F80;
+
+}
+
+.colour__card {
+    background-color: #60435F;
+    color: #FDF7FA;
+    border-radius: 0;
+}
+
+
+.colour__vendor {
+    background-color: #60435F;
+    color: #FDF7FA;
+}
+
+.colour__vendor:hover {
+    background-color: #E2A3C7;
+    color: #FDF7FA;
+}
+
+
+.item__details {
+    text-decoration-line: underline;
+}
+
+.item__details:hover {
+    text-decoration-line:underline;
+    font-weight: 500;
+}
+
+.vendor__details{
+    text-decoration: none;
+    color: #60435F;
+}
+
+.vendor__details:hover {
+    color: #D67AB1;
+    text-decoration-line: underline;
+}
+
+.colour__icon {
+    color: #E2A3C7;
+}
+
+.colour__icon2 {
+    color: #60435F;
+}
+
+.colour__button {
+    background-color: #D67AB1;
+    color: #60435F;
+}
+
+.colour__button:hover {
+    background-color: #E2A3C7;
+    color: #FDF7FA;
+}
+
+.colour__button__2 {
+    background-color: #60435F;
+    color: #FDF7FA;
+}
+
+.colour__button__2:hover {
+    background-color: #E2A3C7;
+    color: #FDF7FA;
+}
+
+.divs__payment__method {
+    width: 325px;
+}
+
+.payment__method__colour {
+    background-color: #60435F;
+    color: #FDF7FA
+}
+
+.div__newsletter {
+    width: 325px;
+}
+
+.small__text {
+    font-size: 13px;
+}
+
+.footer__colour {
+    background-color: #60435F;
+    color: #FDF7FA
+}
+
+
+.custom__page__link {
+    background-color: #60435F;
+    color: #FDF7FA;
+    border: 0;
+}
+
+.custom__page__link:focus {
+    box-shadow: none;
+    color: #FDF7FA;
+    background-color: #60435F;
+    outline: none;
+    border: 0;
+}
+
+.custom__page__link:hover {
+    background-color: #E2A3C7;
+    color: #FDF7FA;
+}
+
+.page-item.active .custom__page__link {
+    background-color: #E2A3C7;
+    color: #FDF7FA;
+}
+
+
+.dropdown-menu.colour__drop .dropdown-item:hover {
+    background-color: #60435F;
+    color: #FDF7FA;
+}
+
+.dropdown-menu.colour__drop .dropdown-item:focus {
+    background-color: #D67AB1;
+    color: #FDF7FA;
+    box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
+
+}
+
+
+.form-select:focus {
+    box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
+    border-color: #60435F;
+}
+
+
+.dropdown-toggle:hover {
+    color: #60435F;
+    font-weight: 500;
+}
+
+.form-range.colour__thumb::-webkit-slider-thumb {
+    background: #60435F;
+    border: 0;
+}
+
+.form-range.colour__thumb:hover::-webkit-slider-thumb {
+    background: #E2A3C7;
+    border: 0;
+}
+
+.form-range.colour__thumb:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
+    border-color: #60435F;
+}
+
+.form-check-input:focus {
+    background-color: #60435F;
+    color: #FDF7FA;
+    box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
+    border: 0;
+}
+
+.form-check-input:checked {
+    background-color: #60435F;
+    color: #FDF7FA;
+    border: 0;
+}
+
+
+.colour__display {
+    color: #60435F;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #60435F;
+    box-shadow: none;
+    border: 0;
+}
+
+input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
+    border: 0;
+}
+
+
+@media(min-width: 768px) {
+
+    .div__newsletter {
+        width: 696px;
+    }
+
+}

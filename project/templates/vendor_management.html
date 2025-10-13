@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set active_page = 'vendor_manage' %}
+{% block title %}Vendor Management{% endblock %}
+
+{% block content %}
+<h1 class="visually-hidden">Vendor Management</h1>
+
+<section class="mb-4">
+  <h2 class="my-3 colour__header fw-bold">Your artworks</h2>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+      <tr>
+        <th class="col-1">Preview</th>
+        <th>Title</th>
+        <th>Price/week</th>
+        <th>Category</th>
+        <th>Status</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+      <tr>
+        <td><img src="{{ item.imageLink or url_for('static', filename='img/placeholder.png') }}"
+                 alt="" class="img-fluid rounded" style="max-width:72px"></td>
+        <td>{{ item.title }}</td>
+        <td>AUD {{ '%.2f'|format(item.pricePerWeek) }}</td>
+        <td>{{ item.categoryName or item.category_id }}</td>
+        <td>{{ item.availabilityStatus }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-center text-muted">No artworks yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="mb-5">
+  <h2 class="colour__header fw-bold">Publish New Artwork</h2>
+
+  <form method="post" action="{{ url_for('main.vendor_manage') }}" class="row g-3">
+    {{ form.csrf_token }}
+
+    <div class="col-md-4">
+      <label class="form-label" for="{{ form.title.id }}">Title</label>
+      {{ form.title(class_="form-control") }}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label" for="{{ form.vendor_id.id }}">Vendor</label>
+      {{ form.vendor_id(class_="form-select") }}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label" for="{{ form.category_id.id }}">Category</label>
+      {{ form.category_id(class_="form-select") }}
+      <div class="form-text">Optional</div>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label" for="{{ form.pricePerWeek.id }}">Price per week (AUD)</label>
+      {{ form.pricePerWeek(class_="form-control") }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label" for="{{ form.maxQuantity.id }}">Max quantity</label>
+      {{ form.maxQuantity(class_="form-control") }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label" for="{{ form.availabilityStartDate.id }}">Available from</label>
+      {{ form.availabilityStartDate(class_="form-control", placeholder="YYYY-MM-DD") }}
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label" for="{{ form.availabilityEndDate.id }}">Available until</label>
+      {{ form.availabilityEndDate(class_="form-control", placeholder="YYYY-MM-DD") }}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label" for="{{ form.imageLink.id }}">Image URL</label>
+      {{ form.imageLink(class_="form-control") }}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label" for="{{ form.availabilityStatus.id }}">Status</label>
+      {{ form.availabilityStatus(class_="form-select") }}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label" for="{{ form.itemDescription.id }}">Description</label>
+      {{ form.itemDescription(class_="form-control", rows="4") }}
+    </div>
+
+    <div class="col-12 d-flex gap-2">
+      {{ form.submit(class_="btn colour__button__2") }}
+      <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

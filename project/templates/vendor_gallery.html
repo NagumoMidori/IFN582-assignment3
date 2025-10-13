@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% set active_page = 'vendor_gallery' %}
+{% block title %}Vendor — {{ vendor.artisticName if vendor else 'Gallery' }}{% endblock %}
+
+{% block content %}
+<h1 class="visually-hidden">Vendor Gallery</h1>
+<h2 class="my-3 mb-xl-5 text-center colour__header fw-bold">
+  {{ vendor.artisticName if vendor else 'Vendor' }}
+</h2>
+
+<section class="container mx-auto">
+  <div class="row mx-auto">
+    <div class="col-12 col-md-8 col-xl-6 pb-4">
+      <div class="card rounded-0">
+        <img src="{{ (vendor.profilePictureLink or url_for('static', filename='images/averie-woodard-4nulm-JUYFo-unsplash.jpg')) }}"
+             alt="{{ vendor.artisticName if vendor else 'Vendor profile' }}">
+      </div>
+    </div>
+    <div class="col-12 col-md-4 col-xl-6 pb-4">
+      <div class="card-body rounded-0">
+        <h2 class="card-header colour__header">Artist's Bio</h2>
+        <p class="card-text">{{ vendor.bio or 'Bio coming soon.' }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# Items for this vendor: expects items=list of Artwork #}
+<div class="container row mx-auto g-4 my-3 my-xl-5">
+  {% for item in items %}
+  <div class="pb-4 col-12 col-md-6 col-xxl-4">
+    <div class="card colour__card h-100">
+      <img src="{{ item.imageLink or url_for('static', filename='images/placeholder.png') }}" alt="">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ item.title }}</h5>
+        <p class="card-text">{{ item.itemDescription }}</p>
+        <a href="{{ url_for('main.category_items', category_id=item.category_id) }}"
+           class="item__details text-reset">{{item.categoryName}}</a>
+        <p class="py-2">AUD {{ '%.2f'|format(item.pricePerWeek) }}</p>
+        <div class="mt-auto">
+          <a href="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}"
+             class="btn colour__button me-2">Add to cart <i class="bi bi-cart"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-muted">This vendor has no items yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

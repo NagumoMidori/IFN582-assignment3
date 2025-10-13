@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="images/shop.svg" type="image/svg+xml">
+  <title>Vendor Management</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+  <header>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-md nav__colour navbar-dark">
+      <div class="container-fluid">
+        <a class=" navbar-brand" href="index.html">Art Lease Gallery</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="vendor_gallery.html">Vendor Gallery</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="vendor_management.html">Vendor Management</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="checkout.html"><i class="bi bi-cart"></i> Checkout</a>
+            </li>
+          </ul>
+          <form class="d-flex" role="search">
+            <label for="siteSearch" class="visually-hidden">Search site</label>
+            <input id="siteSearch" class="form-control me-2" type="search" placeholder="Search">
+            <button class="btn btn-outline-light" type="submit">Search</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <main class="container my-4">
+    <h1 class="visually-hidden">Vendor Management</h1>
+    <!-- Items table -->
+    <section>
+      <h2 class="my-3 mb-xl-5 colour__header fw-bold">Your items</h2>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" class="col-1">Preview</th>
+              <th scope="col">Title</th>
+              <th scope="col">Price</th>
+              <th scope="col">Category</th>
+              <th scope="col">Availability</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><img src="images/Vendor 1/pixeliota-aMvSBrOqmQk-unsplash.jpg" alt="" class="img-fluid rounded">
+              </td>
+              <td>Item 3</td>
+              <td>$ 30.00</td>
+              <td>Digital Art</td>
+              <td>Available</td>
+              <td class="text-end">
+                <button class="btn btn-outline-secondary btn-sm mb-1">Edit</button>
+                <button class="btn btn-outline-danger btn-sm mb-1">Delete</button>
+              </td>
+            </tr>
+            <tr>
+              <td><img src="images/Vendor 1/kalen-emsley-Bkci_8qcdvQ-unsplash.jpg" alt="" class="img-fluid rounded">
+              </td>
+              <td>Item 7</td>
+              <td>$ 18.00</td>
+              <td>Photography</td>
+              <td>Leased</td>
+              <td class="text-end">
+                <button class="btn btn-outline-secondary btn-sm mb-1">Edit</button>
+                <button class="btn btn-outline-danger btn-sm mb-1">Delete</button>
+              </td>
+            </tr>
+            <tr>
+              <td><img src="images/Vendor 1/mcgill-library-y4PqRPqSako-unsplash.jpg" alt="" class="img-fluid rounded">
+              </td>
+              <td>Item 8</td>
+              <td>$ 28.00</td>
+              <td>Painting</td>
+              <td>Leased</td>
+              <td class="text-end">
+                <button class="btn btn-outline-secondary btn-sm mb-1">Edit</button>
+                <button class="btn btn-outline-danger btn-sm mb-1">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <!-- KPIs -->
+    <section class="mb-4">
+      <div class="row row-cols-1 row-cols-md-3 g-3">
+        <div class="col">
+          <div class="card h-100 text-center">
+            <div class="card-body">
+              <div class="text-muted">Total Revenue</div>
+              <div class="display-6 colour__display">$ 1,440</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card h-100 text-center">
+            <div class="card-body">
+              <div class="text-muted">Items Leased</div>
+              <div class="display-6 colour__display">36</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card h-100 text-center">
+            <div class="card-body">
+              <div class="text-muted">Visitors</div>
+              <div class="display-6 colour__display">1.7k</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Upload form -->
+    <section class="mb-5">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="m-0 colour__header fw-bold">Add New Item</h2>
+      </div>
+      <form class="row g-3">
+        <div class="col-md-6">
+          <label for="title" class="form-label">Title</label>
+          <input id="title" name="title" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label for="category" class="form-label">Category</label>
+          <select id="category" name="category" class="form-select">
+            <option>Painting</option>
+            <option>Drawing</option>
+            <option>Photography</option>
+            <option>Sculpture</option>
+            <option>Digital Art</option>
+            <option>Mixed Media</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="price" class="form-label">Price</label>
+          <div class="input-group">
+            <span class="input-group-text">AUD</span>
+            <input id="price" name="price" type="number" min="0" step="0.01" value="30.00" class="form-control">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="end_of_availability" class="form-label">Available Until</label>
+          <input type="date" class="form-control" id="end_of_availability" name="rental_end_date">
+        </div>
+        <div class="col-md-8">
+          <label for="file" class="form-label">Image file</label>
+          <input id="file" name="file" type="file" accept="image/*" class="form-control">
+        </div>
+        <div class="input-group col-12 d-flex">
+          <span class="input-group-text">Item description</span>
+          <textarea class="form-control" aria-label="Item description"></textarea>
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button class="btn colour__button__2">Upload</button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <footer class="footer__colour text-center ">
+    <p class="py-3 card-text">2025 <i class="bi bi-c-circle small__text"></i> Developed by Daniel Souza Mendes
+    </p>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>

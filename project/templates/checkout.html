@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% set active_page = 'checkout' %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<h1 class="visually-hidden">Checkout</h1>
+<h2 class="my-3 mb-xl-5 colour__header fw-bold">Checkout</h2>
+
+<section aria-label="Cart" class="mb-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+      <tr>
+        <th scope="col" class="col-1">Item</th>
+        <th scope="col">Category</th>
+        <th scope="col">Lease Period</th>
+        <th scope="col">Qty</th>
+        <th scope="col">Price (per week)</th>
+        <th scope="col">Line Total</th>
+        <th scope="col" class="text-end">Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% set subtotal = 0 %}
+      {% for li in cart.items %}
+        {% set weeks = li.rentalDuration or 1 %}
+        {% set price = li.artwork.pricePerWeek %}
+        {% set line_total = (weeks * li.quantity * price) %}
+        {% set subtotal = subtotal + line_total %}
+        <tr>
+          <td>
+            <div class="d-flex row align-items-center gap-2">
+              <img src="{{ li.artwork.imageLink or url_for('static', filename='images/placeholder.png') }}"
+                   alt="" class="img-fluid rounded" style="max-width:72px">
+              <span class="align-items-center fw-bold">{{ li.artwork.title }}</span>
+            </div>
+          </td>
+          <td>{{ li.artwork.category_id }}</td>
+          <td>{{ weeks }} week(s)</td>
+          <td>{{ li.quantity }}</td>
+          <td>AUD {{ '%.2f'|format(price) }}</td>
+          <td>AUD {{ '%.2f'|format(line_total) }}</td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('main.cart_remove', item_id=li.cartItem_id) }}">
+              <button class="btn btn-outline-danger btn-sm mb-1">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center text-muted">Your cart is empty.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="row g-4">
+    <div class="col-12 col-md-7">
+      <div class="card">
+        <div class="card-body">
+          <form aria-label="Billing details" method="post" action="{{ url_for('main.checkout') }}">
+            {{ form.csrf_token }}
+            <h2 class="h4 colour__header fw-bold">Billing details</h2>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="{{ form.firstname.id }}">First Name</label>
+                {{ form.firstname(class_="form-control", required=True) }}
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="{{ form.surname.id }}">Surname</label>
+                {{ form.surname(class_="form-control", required=True) }}
+              </div>
+              <div class="col-md-8">
+                <label class="form-label" for="{{ form.email.id }}">Email</label>
+                {{ form.email(class_="form-control", required=True) }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.phone.id }}">Phone</label>
+                {{ form.phone(class_="form-control", required=True) }}
+              </div>
+
+              <h2 class="h4 mt-2 colour__header fw-bold">Payment</h2>
+              <div class="col-12 d-flex flex-column gap-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="pay" id="payCard" checked>
+                  <label class="form-check-label" for="payCard">
+                    <i class="colour__icon2 bi bi-credit-card fs-6"></i> Credit/Debit Card
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="pay" id="payPaypal">
+                  <label class="form-check-label" for="payPaypal">
+                    <i class="colour__icon2 bi bi-paypal fs-6"></i> PayPal
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="pay" id="payWallet">
+                  <label class="form-check-label" for="payWallet">
+                    <i class="colour__icon2 bi bi-wallet2 fs-6"></i> Digital Wallet
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-12 mt-3 d-flex align-items-center gap-3">
+                {{ form.submit(class_="btn colour__button__2") }}
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {# Summary #}
+    <div class="col-12 col-md-5">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="h4 colour__header fw-bold">Summary</h2>
+          {% set tax = subtotal * 0.10 %}
+          {% set total = subtotal + tax %}
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Subtotal <strong>AUD {{ '%.2f'|format(subtotal) }}</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Tax (10%) <strong>AUD {{ '%.2f'|format(tax) }}</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Total <strong>AUD {{ '%.2f'|format(total) }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

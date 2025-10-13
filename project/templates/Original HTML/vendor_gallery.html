@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="images/shop.svg" type="image/svg+xml">
+    <title>Vendor Gallery</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+    <header>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-md nav__colour navbar-dark">
+            <div class="container-fluid">
+                <a class=" navbar-brand" href="index.html">Art Lease Gallery</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="vendor_gallery.html">Vendor Gallery</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="vendor_management.html">Vendor Management</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="checkout.html"><i class="bi bi-cart"></i> Checkout</a>
+                        </li>
+                    </ul>
+                    <form class="d-flex" role="search">
+                        <label for="siteSearch" class="visually-hidden">Search site</label>
+                        <input id="siteSearch" class="form-control me-2" type="search" placeholder="Search">
+                        <button class="btn btn-outline-light" type="submit">Search</button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <h1 class="visually-hidden">Vendor Gallery</h1>
+        <h2 class="my-3 mb-xl-5 text-center colour__header fw-bold">Lorem Ipsum</h2>
+        <!-- Vendor profile -->
+        <section class="container mx-auto">
+            <div class="container row mx-auto">
+                <div class="col-12 col-md-8 col-xl-6 pb-4">
+                    <div class="card rounded-0">
+                        <img src="images/averie-woodard-4nulm-JUYFo-unsplash.jpg" alt="">
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 col-xl-6 pb-4">
+                    <div class="card-body rounded-0">
+                        <h2 class="card-header colour__header">Artist's Bio</h2>
+                        <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae iaculis
+                            dolor. Curabitur
+                            eget
+                            accumsan ante. Etiam enim sem, porttitor vel lectus a, scelerisque aliquam eros. Nam
+                            vulputate
+                            eros varius condimentum dictum. Etiam lacinia condimentum tellus et suscipit. Proin in ante
+                            suscipit erat iaculis malesuada.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Filters of gallery -->
+        <div class="container rounded-5 shadow-lg py-2 mx-auto">
+            <div class="d-flex align-items-center row">
+                <div class="col-3">
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" id="sortBtn" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            Sort
+                        </button>
+                        <ul class="dropdown-menu colour__drop">
+                            <li><a class="dropdown-item" href="#">Latest</a></li>
+                            <li><a class="dropdown-item" href="#">Oldest</a></li>
+                            <li><a class="dropdown-item" href="#">Lowest price first</a></li>
+                            <li><a class="dropdown-item" href="#">Highest price first</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" id="priceBtn" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            Price
+                        </button>
+                        <ul class="dropdown-menu colour__drop">
+                            <li><input type="range" class="form-range colour__thumb p-3" min="30" max="180" step="25"
+                                    id="maxPrice"></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" id="categoryBtn" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            Category
+                        </button>
+                        <ul class="dropdown-menu colour__drop p-2">
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="paintingChecked"
+                                        checked="">
+                                    <label class="form-check-label" for="paintingChecked">
+                                        Painting
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="drawingChecked"
+                                        checked="">
+                                    <label class="form-check-label" for="drawingChecked">
+                                        Drawing
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="photographyChecked"
+                                        checked="">
+                                    <label class="form-check-label" for="photographyChecked">
+                                        Photography
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="sculptureChecked"
+                                        checked="">
+                                    <label class="form-check-label" for="sculptureChecked">
+                                        Sculpture
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="digital_art_Checked"
+                                        checked="">
+                                    <label class="form-check-label" for="digital_art_Checked">
+                                        Digital Art
+                                    </label>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="mixed_media_Checked"
+                                        checked="">
+                                    <label class="form-check-label" for="mixed_media_Checked">
+                                        Mixed Media
+                                    </label>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <button type="button" id="resetBtn" class="btn colour__button__2 m-1">Reset Filters</button>
+                </div>
+            </div>
+        </div>
+        <!-- items -->
+        <div class="container row mx-auto g-4 my-3 my-xl-5">
+            <div class="pb-4 col-12 col-md-6 col-xxl-4">
+                <div class="card colour__card">
+                    <img src="images/Vendor 1/pixeliota-36DhfgpWmho-unsplash.jpg" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">Item 1</h5>
+                        <p class="card-text">
+                            Vestibulum pellentesque eget risus ut tempus. Morbi nisi mi, bibendum eget semper et,
+                            facilisis in nisl. In non dolor vel velit iaculis ultricies nec sed nisi. Curabitur placerat
+                            felis a egestas dignissim. Duis a faucibus dolor. Morbi non commodo velit. Praesent
+                            imperdiet lectus eu lacus fermentum, sit amet viverra nulla egestas. Sed ut laoreet nulla.
+                            Vivamus et finibus magna, eget vehicula felis. Phasellus aliquam libero dignissim turpis
+                            varius egestas quis ac mauris
+                        </p>
+                        <a href="item_details.html" class="item__details text-reset">Item details</a>
+                        <p class="py-2">AUD 30.00</p>
+                        <a href="#" class="btn colour__button me-5">Add to cart <i class="bi bi-cart"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="pb-4 col-12 col-md-6 col-xxl-4">
+                <div class="card colour__card">
+                    <img src="images/Vendor 1/pixeliota-3tR4ez8XZzI-unsplash.jpg" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">Item 2</h5>
+                        <p class="card-text">
+                            Vestibulum pellentesque eget risus ut tempus. Morbi nisi mi, bibendum eget semper et,
+                            facilisis in nisl. In non dolor vel velit iaculis ultricies nec sed nisi. Curabitur placerat
+                            felis a egestas dignissim. Duis a faucibus dolor. Morbi non commodo velit. Praesent
+                            imperdiet lectus eu lacus fermentum, sit amet viverra nulla egestas. Sed ut laoreet nulla.
+                            Vivamus et finibus magna, eget vehicula felis. Phasellus aliquam libero dignissim turpis
+                            varius egestas quis ac mauris
+                        </p>
+                        <a href="item_details.html" class="item__details text-reset">Item details</a>
+                        <p class="py-2">AUD 30.00</p>
+                        <a href="#" class="btn colour__button me-5">Add to cart <i class="bi bi-cart"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="pb-4 col-12 col-md-6 col-xxl-4">
+                <div class="card colour__card">
+                    <img src="images/Vendor 1/pixeliota-aMvSBrOqmQk-unsplash.jpg" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">Item 3</h5>
+                        <p class="card-text">
+                            Vestibulum pellentesque eget risus ut tempus. Morbi nisi mi, bibendum eget semper et,
+                            facilisis in nisl. In non dolor vel velit iaculis ultricies nec sed nisi. Curabitur placerat
+                            felis a egestas dignissim. Duis a faucibus dolor. Morbi non commodo velit. Praesent
+                            imperdiet lectus eu lacus fermentum, sit amet viverra nulla egestas. Sed ut laoreet nulla.
+                            Vivamus et finibus magna, eget vehicula felis. Phasellus aliquam libero dignissim turpis
+                            varius egestas quis ac mauris
+                        </p>
+                        <a href="item_details.html" class="item__details text-reset">Item details</a>
+                        <p class="py-2">AUD 30.00</p>
+                        <a href="#" class="btn colour__button me-5">Add to cart <i class="bi bi-cart"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="pb-4 col-12 col-md-6 col-xxl-4">
+                <div class="card colour__card">
+                    <img src="images/Vendor 1/pixeliota-kmECWP2892g-unsplash.jpg" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">Item 4</h5>
+                        <p class="card-text">
+                            Vestibulum pellentesque eget risus ut tempus. Morbi nisi mi, bibendum eget semper et,
+                            facilisis in nisl. In non dolor vel velit iaculis ultricies nec sed nisi. Curabitur placerat
+                            felis a egestas dignissim. Duis a faucibus dolor. Morbi non commodo velit. Praesent
+                            imperdiet lectus eu lacus fermentum, sit amet viverra nulla egestas. Sed ut laoreet nulla.
+                            Vivamus et finibus magna, eget vehicula felis. Phasellus aliquam libero dignissim turpis
+                            varius egestas quis ac mauris
+                        </p>
+                        <a href="item_details.html" class="item__details text-reset">Item details</a>
+                        <p class="py-2">AUD 30.00</p>
+                        <a href="#" class="btn colour__button me-5">Add to cart <i class="bi bi-cart"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="pb-4 col-12 col-md-6 col-xxl-4">
+                <div class="card colour__card">
+                    <img src="images/Vendor 1/pixeliota-w7rGEpMXO8I-unsplash.jpg" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">Item 5</h5>
+                        <p class="card-text">
+                            Vestibulum pellentesque eget risus ut tempus. Morbi nisi mi, bibendum eget semper et,
+                            facilisis in nisl. In non dolor vel velit iaculis ultricies nec sed nisi. Curabitur placerat
+                            felis a egestas dignissim. Duis a faucibus dolor. Morbi non commodo velit. Praesent
+                            imperdiet lectus eu lacus fermentum, sit amet viverra nulla egestas. Sed ut laoreet nulla.
+                            Vivamus et finibus magna, eget vehicula felis. Phasellus aliquam libero dignissim turpis
+                            varius egestas quis ac mauris
+                        </p>
+                        <a href="item_details.html" class="item__details text-reset">Item details</a>
+                        <p class="py-2">AUD 30.00</p>
+                        <a href="#" class="btn colour__button me-5">Add to cart <i class="bi bi-cart"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="pb-4 col-12 col-md-6 col-xxl-4">
+                <div class="card colour__card">
+                    <img src="images/Vendor 1/pixeliota-ZqTMICSirdE-unsplash.jpg" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title">Item 6</h5>
+                        <p class="card-text">
+                            Vestibulum pellentesque eget risus ut tempus. Morbi nisi mi, bibendum eget semper et,
+                            facilisis in nisl. In non dolor vel velit iaculis ultricies nec sed nisi. Curabitur placerat
+                            felis a egestas dignissim. Duis a faucibus dolor. Morbi non commodo velit. Praesent
+                            imperdiet lectus eu lacus fermentum, sit amet viverra nulla egestas. Sed ut laoreet nulla.
+                            Vivamus et finibus magna, eget vehicula felis. Phasellus aliquam libero dignissim turpis
+                            varius egestas quis ac mauris
+                        </p>
+                        <a href="item_details.html" class="item__details text-reset">Item details</a>
+                        <p class="py-2">AUD 30.00</p>
+                        <a href="#" class="btn colour__button me-5">Add to cart <i class="bi bi-cart"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Page navigation -->
+        <div class="d-flex justify-content-center mx-auto pb-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination d-flex justify-content-center">
+                    <li class="page-item">
+                        <a href="#" class="page-link custom__page__link">Previous</a>
+                    </li>
+                    <li class="page-item active">
+                        <a class="page-link custom__page__link" href="#" aria-current="page">1</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link custom__page__link" href="#">2</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link custom__page__link" href="#">3</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link custom__page__link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        </section>
+    </main>
+    <!-- Footer  -->
+    <footer class="footer__colour text-center ">
+        <p class="py-3 card-text">2025 <i class="bi bi-c-circle small__text"></i> Developed by Daniel Souza Mendes
+        </p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous">
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% set active_page = 'register' %}
+{% import 'bootstrap5/form.html' as wtf %}
+
+{% block title %}Register — Art Lease Gallery{% endblock %}
+
+{% block content %}
+<section class="shadow-sm mb-5 mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <h1>Create Your Account</h1>
+        <p>
+          Thanks for choosing Art Lease Gallery. Fill in your details to create an account.
+          Already registered?
+          <a href="{{ url_for('main.login') }}">Log in here</a>.
+        </p>
+      </div>
+    </div>
+    <div class="row mt-4 justify-content-center p-3">
+      <div class="col-md-6">
+        {{ wtf.render_form(form) }}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

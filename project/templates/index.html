@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% set active_page = 'home' %}
+{% block title %}Home — Art Lease Gallery{% endblock %}
+
+{% block content %}
+<h1 class="visually-hidden">Art Lease Gallery — Home</h1>
+
+{# Hero / carousel #}
+<div id="carouselCaptions" class="carousel slide mb-4" data-bs-ride="carousel">
+  <div class="carousel-indicators">
+    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+            aria-label="Slide 1" aria-current="true"></button>
+    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="1" aria-label="Slide 2"></button>
+  </div>
+  <div class="carousel-inner">
+    <div class="carousel-item active position-relative">
+      <a href="#gallery" class="stretched-link text-decoration-none text-reset">
+        <img class="img-fluid w-100"
+             src="{{ url_for('static', filename='img/mike-von-tC7G9eTrORQ-unsplash.jpg') }}"
+             alt="Art gallery with pixel art arranged in a grid on a white wall">
+      </a>
+      <div class="carousel-caption carousel__text__box">
+        <h5>Welcome to Daniel's Art Lease Gallery</h5>
+        <p class="d-none d-sm-block">Our platform provides a space for creators to showcase their work,
+          while allowing customers to experience art through short-term rentals.</p>
+      </div>
+    </div>
+    <div class="carousel-item position-relative">
+      <a href="#joinUs" class="stretched-link text-decoration-none text-reset">
+        <img class="img-fluid w-100"
+             src="{{ url_for('static', filename='img/samuel-regan-asante-t9bl5HArngc-unsplash.jpg') }}"
+             alt="We are open image">
+      </a>
+      <div class="carousel-caption carousel__text__box">
+        <h5>Join our Newsletter!</h5>
+        <p class="d-none d-sm-block">Register today and get updates from your favourite artists.</p>
+      </div>
+    </div>
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselCaptions" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+</div>
+
+{# Vendors overview #}
+<section>
+  <h2 class="my-3 my-xl-5 text-center colour__header fw-bold">Browse Vendors</h2>
+  <div class="container mx-auto">
+    <div class="row g-4">
+      {% for v in vendors %}
+      <div class="col-6 col-md-4 col-xl-2 pb-4 position-relative">
+        <div class="card rounded-0">
+          <img src="{{v.profilePictureLink or url_for('static', filename='img/' + vendor.image)}}" alt="">
+          <div class="card-header colour__vendor rounded-0">
+            <a href="{{ url_for('main.vendor_gallery', vendor_id=v.vendor_id) }}"
+               class="stretched-link text-decoration-none text-reset">
+              <p class="text-center card-text">{{ v.artisticName or (v.firstName ~ ' ' ~ v.lastName) }}</p>
+            </a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-center text-muted">No vendors available yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# Gallery (artworks) #}
+<section>
+  <h2 class="my-3 my-xl-5 text-center colour__header fw-bold" id="gallery">Gallery</h2>
+
+  {# (Optional) basic filter shell, non-functional for now #}
+  <div class="container rounded-5 shadow-lg py-2 mx-auto">
+    <div class="row align-items-center">
+      <div class="col-6 col-md-3">
+        <div class="dropdown">
+          <button class="btn dropdown-toggle" id="sortBtn" type="button" data-bs-toggle="dropdown"
+                  aria-expanded="false">Sort</button>
+          <ul class="dropdown-menu colour__drop">
+            <li><a class="dropdown-item" href="#">Latest</a></li>
+            <li><a class="dropdown-item" href="#">Oldest</a></li>
+            <li><a class="dropdown-item" href="#">Lowest price first</a></li>
+            <li><a class="dropdown-item" href="#">Highest price first</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="dropdown">
+          <button class="btn dropdown-toggle" id="priceBtn" type="button" data-bs-toggle="dropdown"
+                  aria-expanded="false">Price</button>
+          <ul class="dropdown-menu colour__drop">
+            <li><input type="range" class="form-range colour__thumb p-3" min="0" max="200" step="10" id="maxPrice"></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 text-md-end mt-2 mt-md-0">
+        <button type="button" id="resetBtn" class="btn colour__button__2 m-1">Reset Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mx-auto my-3 my-xl-5">
+    <div class="row g-4">
+      {% for item in artworks %}
+      <div class="pb-4 col-12 col-md-6 col-xxl-4">
+        <div class="card colour__card h-100">
+          <img src="{{ item.imageLink or url_for('static', filename='img/placeholder.png') }}" alt="">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ item.title }}</h5>
+            <p class="card-text">
+              {{ (item.itemDescription or '')[:220] }}{% if item.itemDescription and item.itemDescription|length > 220 %}…{% endif %}
+            </p>
+            <a href="{{ url_for('main.item_details', artwork_id=item.artwork_id) }}"
+               class="item__details text-reset">Item details</a>
+            <p class="py-2">AUD {{ '%.2f'|format(item.pricePerWeek) }}</p>
+            <div class="mt-auto">
+              <form method="post" action="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}">
+                <input type="hidden" name="quantity" value="1">
+                <input type="hidden" name="weeks" value="1">
+                <button type="submit" class="btn colour__button">Add to cart <i class="bi bi-cart"></i></button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-center text-muted">No artworks available yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# (Optional) pagination shell #}
+  <div class="d-flex justify-content-center mx-auto pb-4">
+    <nav aria-label="Page navigation">
+      <ul class="pagination d-flex justify-content-center">
+        <li class="page-item disabled"><a href="#" class="page-link custom__page__link">Previous</a></li>
+        <li class="page-item active"><a class="page-link custom__page__link" href="#" aria-current="page">1</a></li>
+        <li class="page-item"><a class="page-link custom__page__link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link custom__page__link" href="#">3</a></li>
+        <li class="page-item"><a class="page-link custom__page__link" href="#">Next</a></li>
+      </ul>
+    </nav>
+  </div>
+</section>
+
+{# Newsletter #}
+<form id="joinUs" class="border border-secondary my-5 p-3 text-center div__newsletter mx-auto" method="post" action="#">
+  <h5>Want 10% OFF your first lease? Subscribe to our newsletter!</h5>
+  <div class="input-group my-3">
+    <input type="email" class="form-control border-secondary" placeholder="Type your e-mail here"
+           aria-label="Email" aria-describedby="button_subscribe" />
+    <button class="btn colour__button__2" type="submit" id="button_subscribe">Subscribe</button>
+  </div>
+</form>
+{% endblock %}

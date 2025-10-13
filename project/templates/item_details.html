@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set active_page = 'vendor_gallery' %}
+{% block title %}Item — {{ item.title if item else 'Details' }}{% endblock %}
+
+{% block content %}
+<h1 class="visually-hidden">Item Details</h1>
+<section class="container">
+  <div class="row g-4 mx-auto">
+    <div class="col-12 col-md-8 col-xl-6">
+      <img src="{{ item.imageLink or url_for('static', filename='images/placeholder.png') }}"
+           alt="Large preview of the selected image" class="img-fluid rounded">
+    </div>
+
+    <div class="col-12 col-md-4">
+      <h2 class="colour__header">{{ item.title }}</h2>
+      <p class="text-muted mb-2">By
+        <a class="vendor__details" href="#">{{ vendor.artisticName if vendor else 'Vendor' }}</a>
+      </p>
+      <p class="text-muted mb-2">Category: {{ category.categoryName if category else item.category_id }}</p>
+
+      <p>{{ item.itemDescription or 'No description.' }}</p>
+
+      <div class="card mt-3">
+        <form class="container mx-auto" method="post" action="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}">
+          <div class="mb-3">
+            <div class="col-12 col-sm-auto col-form-label colour__display fw-bold">Duration</div>
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="radio" name="durationPreset" id="durationStd" value="2" checked>
+              <label class="form-check-label" for="durationStd">Standard – 2 weeks</label>
+            </div>
+
+            <div class="row g-2 align-items-center mt-2">
+              <div class="col-12 col-sm-auto">
+                <div class="form-check m-0">
+                  <input class="form-check-input" type="radio" name="durationPreset" id="durationCustom" value="custom">
+                  <label class="form-check-label" for="durationCustom">Custom</label>
+                </div>
+              </div>
+              <div class="col-12 col-sm-auto">
+                <input type="number" class="form-control" id="weeks" name="weeks" min="1" placeholder="Weeks">
+              </div>
+            </div>
+
+            <div class="row g-2 align-items-center mb-3">
+              <label for="qty" class="col-12 col-sm-auto fw-bold colour__display col-form-label">Quantity</label>
+              <div class="col-12 col-sm-auto">
+                <input id="qty" name="quantity" type="number" min="1" value="1" class="form-control">
+              </div>
+            </div>
+
+            <p class="fs-4 fw-semibold mb-3" id="price">AUD {{ '%.2f'|format(item.pricePerWeek) }}</p>
+
+            <div class="d-flex flex-wrap my-2 gap-2">
+              <button type="submit" class="btn colour__button__2">Add to cart <i class="bi bi-cart"></i></button>
+              <a class="btn colour__button" href="{{ url_for('main.checkout') }}">Go to checkout</a>
+            </div>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

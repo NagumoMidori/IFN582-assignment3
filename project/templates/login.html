@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% set active_page = 'login' %}
+{% import 'bootstrap5/form.html' as wtf %}
+
+{% block title %}Login — Art Lease Gallery{% endblock %}
+
+{% block content %}
+<section class="shadow-sm mb-5 mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <h1>User Login</h1>
+        <p>
+          Welcome back to Art Lease Gallery. Please provide your credentials to access your account.
+          Don’t have an account?
+          <a href="{{ url_for('main.register') }}">Register here</a>.
+        </p>
+      </div>
+    </div>
+    <div class="row mt-4 justify-content-center p-3">
+      <div class="col-md-6">
+        {{ wtf.render_form(form) }}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

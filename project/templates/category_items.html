@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% set active_page = 'categories' %}
+{% block title %}{{ category.categoryName }} — Art Lease Gallery{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+  <h1 class="h3">Category: {{ category.categoryName }}</h1>
+</header>
+
+{% if items %}
+  <div class="grid grid-cards">
+    {% for it in items %}
+      <article class="card">
+        <img src="{{ it.imageLink }}" alt="{{ it.title }}" class="card-img">
+        <div class="card-body">
+          <h3 class="card-title">
+            <a class="colour__header" href="{{ url_for('main.item_details', artwork_id=it.artwork_id) }}">{{ it.title }}</a>
+          </h3>
+          <div class="muted">${{ '%.2f'|format(it.pricePerWeek) }} / week · {{ it.availabilityStatus }}</div>
+          <div class="card-actions">
+            <a class="btn" href="{{ url_for('main.item_details', artwork_id=it.artwork_id) }}">Details</a>
+            <a class="btn colour__button__2"
+               href="{{ url_for('main.cart', artwork_id=it.artwork_id, quantity=1, weeks=1) }}">
+              Add to cart
+            </a>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>No items found in this category.</p>
+{% endif %}
+{% endblock %}
