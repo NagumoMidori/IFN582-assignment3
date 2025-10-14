@@ -87,7 +87,37 @@ def vendor_register():
 @bp.route('/vendor/manage/', methods=['GET', 'POST'])
 @only_vendors
 def vendor_manage():
-    pass
+    user = session.get('user', {})
+    vendor_id = int(user.get('id'))
+    items = get_vendor_items(vendor_id)
+    form = ArtworkForm()
+    form.vendor_id.choices = [(vendor_id, "Me")]
+
+    if request.method == 'POST' and form.validate_on_submit():
+        category_id = form.category_id.data if form.category_id.data != 0 else None
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO artworks (
+                vendor_id, category_id, title, itemDescription, pricePerWeek,
+                imageLink, availabilityStartDate, availabilityEndDate,
+                maxQuantity, availabilityStatus
+            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            form.vendor_id.data, category_id, form.title.data, form.itemDescription.data,
+            str(form.pricePerWeek.data), form.imageLink.data,
+            form.availabilityStartDate.data, form.availabilityEndDate.data,
+            form.maxQuantity.data, form.availabilityStatus.data
+        ))
+        mysql.connection.commit()
+        cur.close()
+        flash('Artwork published.')
+        return redirect(url_for('main.vendor_manage'))
+
+    vendor = get_vendor(vendor_id)
+    # Also pass categories for table chips if your template wants them
+    return render_template('vendor_management.html',
+                           vendor=vendor, items=items, form=form, categories=get_categories())
+
 # Cart
 @bp.route('/cart/', methods=['GET'])
 def cart():
@@ -221,3 +251,4 @@ def vendor_archive_artwork(artwork_id):
     archive_artwork(artwork_id)
     flash('Artwork archived.', 'success')
     return redirect(url_for('main.vendor_manage'))
+
