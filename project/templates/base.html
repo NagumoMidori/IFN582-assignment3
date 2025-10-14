@@ -42,7 +42,7 @@
           {% if session.get('user') and session['user'].get('role') == 'vendor' %}
           <li class="nav-item">
             <a class="nav-link {% if active_page=='vendor_manage' %}active{% endif %}"
-               href="{{ url_for('main.manage') }}">Vendor Management</a>
+               href="{{ url_for('main.vendor_manage') }}">Vendor Management</a>
           </li>
           {% endif %}
 
@@ -94,3 +94,4 @@
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+
