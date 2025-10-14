@@ -77,6 +77,22 @@
     color: #FDF7FA;
 }
 
+.btn-ghost {
+    color: #FDF7FA;
+    border: 1px solid #452B44;
+    background: linear-gradient(135deg, #60435F, #482B59);
+    border-radius: 999px;
+    padding-inline: 1.125rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-ghost:hover,
+.btn-ghost:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(69, 43, 68, 0.35);
+    filter: brightness(1.05);
+}
+
 .divs__payment__method {
     width: 325px;
 }
@@ -195,6 +211,93 @@ input[type="checkbox"]:checked {
 input[type="checkbox"]:focus {
     box-shadow: 0 0 0 1px #FDF7FA, 0 0 0 .25rem rgba(96, 67, 95, .45);
     border: 0;
+}
+
+.thumb {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 1rem;
+    box-shadow: 0 12px 24px rgba(96, 67, 95, 0.18);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.thumb:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgba(96, 67, 95, 0.24);
+}
+
+.cart-heading {
+    color: #452B44;
+    letter-spacing: 0.02em;
+}
+
+.cart-card {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: none;
+}
+
+.cart-table thead th {
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.cart-table td,
+.cart-table th {
+    padding: 1.125rem 1.25rem;
+    vertical-align: middle;
+}
+
+.cart-item__media {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.status-pill {
+    display: inline-block;
+    margin-top: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(96, 67, 95, 0.08);
+    color: #452B44;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.cart-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.5rem 1.75rem;
+}
+
+@media(max-width: 768px) {
+    .thumb {
+        width: 88px;
+        height: 88px;
+    }
+
+    .cart-table td,
+    .cart-table th {
+        padding: 0.9rem;
+    }
+
+    .cart-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1.25rem;
+    }
+
+    .cart-actions form,
+    .cart-actions a {
+        width: 100%;
+    }
 }
 
 

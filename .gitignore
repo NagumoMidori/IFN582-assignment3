@@ -158,6 +158,9 @@ venv.bak/
 /site
 
 # mypy
+
+# Local diffs
+cart-styling-refresh.diff
 .mypy_cache/
 .dmypy.json
 dmypy.json
