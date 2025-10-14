@@ -7,7 +7,7 @@
 <section class="container">
   <div class="row g-4 mx-auto">
     <div class="col-12 col-md-8 col-xl-6">
-      <img src="{{ item.imageLink or url_for('static', filename='images/placeholder.png') }}"
+      <img src="{{ url_for('static', filename= item.image) }}"
            alt="Large preview of the selected image" class="img-fluid rounded">
     </div>
 
@@ -62,3 +62,4 @@
   </div>
 </section>
 {% endblock %}
+
