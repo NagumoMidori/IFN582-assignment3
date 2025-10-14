@@ -110,9 +110,9 @@ rentalDuration INT,
 unitPrice DECIMAL(10,2),
 FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE  ON UPDATE CASCADE,
 FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id) ON DELETE RESTRICT ON UPDATE CASCADE
-)
+);
 
-USE assessment3;
+
 
 INSERT INTO addresses (address_id, streetNumber, streetName, city, state, postcode, country) VALUES
 (1,'101','Station St','Toowoomba','QLD','4350','Australia'),

@@ -31,6 +31,7 @@ def index():
     vendors = get_all_vendors(limit=12)
     artworks = get_latest_artworks(limit=12, category_id=active_category)
     categories = get_categories()
+    print('artworks are =>', artworks[0])
     return render_template(
         'index.html',
         vendors=vendors,
@@ -96,6 +97,7 @@ def cart():
     if a_id:
         add_to_cart(a_id, qty, weeks)
     c = get_cart()
+    print('cart is =>', c)
     return render_template('cart.html', cart=c)
 
 @bp.post('/cart/add/<int:artwork_id>/')

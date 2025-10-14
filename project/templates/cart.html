@@ -19,7 +19,7 @@
       <tr>
         <td>
           <div class="flex gap-3 items-center">
-            <img src="{{ li.artwork.imageLink }}" alt="{{ li.artwork.title }}" class="thumb">
+            <img src="{{ url_for('static', filename=li.artwork.image) }}" alt="{{ li.artwork.title }}" class="thumb">
             <div>
               <div><a href="{{ url_for('main.item_details', artwork_id=li.artwork_id) }}">{{ li.artwork.title }}</a></div>
               <small class="muted">Status: {{ li.artwork.availabilityStatus }}</small>
