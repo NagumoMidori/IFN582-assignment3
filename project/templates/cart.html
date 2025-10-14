@@ -28,8 +28,8 @@
         </td>
         <td>{{ li.quantity }}</td>
         <td>{{ li.rentalDuration or 1 }}</td>
-        <td class="text-end">${{ '%.2f'|format(li.unitPrice) }}</td>
-        <td class="text-end">${{ '%.2f'|format(li.line_total()) }}</td>
+        <td class="text-end">${{ '%.2f'|format(li.artwork.pricePerWeek) }}</td>
+        <td class="text-end">${{ '%.2f'|format(li.artwork.pricePerWeek * li.quantity * li.rentalDuration) }}</td>
         <td class="text-end">
           <form action="{{ url_for('main.cart_remove', item_id=li.cartItem_id) }}" method="post">
             {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
@@ -42,7 +42,7 @@
     <tfoot>
       <tr>
         <td colspan="4" class="text-end fw-bold">Total</td>
-        <td class="text-end fw-bold">${{ '%.2f'|format(cart.total()) }}</td>
+        <td class="text-end fw-bold">${{ '%.2f'|format(cart.total_using_current_prices()) }}</td>
         <td></td>
       </tr>
     </tfoot>
