@@ -30,7 +30,7 @@
         <tr>
           <td>
             <div class="d-flex row align-items-center gap-2">
-              <img src="{{ li.artwork.imageLink or url_for('static', filename='images/placeholder.png') }}"
+              <img src="{{url_for('static', filename= li.artwork.image) }}"
                    alt="" class="img-fluid rounded" style="max-width:72px">
               <span class="align-items-center fw-bold">{{ li.artwork.title }}</span>
             </div>
@@ -136,3 +136,4 @@
   </div>
 </section>
 {% endblock %}
+
