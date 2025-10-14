@@ -84,6 +84,13 @@ def vendor_register():
     pass
 
 #  Vendor management (list & publish artworks) ----------
+@bp.route('/vendor/self_gallery/')
+@only_vendors
+def vendor_self_view():
+    user = session.get('user', {})
+    vendor_id2 = int(user.get('id'))
+    return redirect(url_for('main.vendor_gallery', vendor_id = vendor_id2))
+
 @bp.route('/vendor/manage/', methods=['GET', 'POST'])
 @only_vendors
 def vendor_manage():
@@ -251,4 +258,5 @@ def vendor_archive_artwork(artwork_id):
     archive_artwork(artwork_id)
     flash('Artwork archived.', 'success')
     return redirect(url_for('main.vendor_manage'))
+
 
