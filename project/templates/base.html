@@ -52,6 +52,20 @@
             <a class="nav-link {% if active_page=='checkout' %}active{% endif %}"
                href="{{ url_for('main.checkout') }}"><i class="bi bi-credit-card"></i> Checkout</a>
           </li>
+
+          {% if not (session.get('user') and session['user'].get('role') == 'vendor' or session.get('user') and session['user'].get('role') == 'customer' or session.get('user') and session['user'].get('role') == 'admin')  %}
+          <li class="nav-item">
+            <a class="nav-link {% if active_page=='login' %}active{% endif %}"
+               href="{{ url_for('main.login') }}">Login</a>
+          </li>
+          {% endif %}
+          {% if session.get('user') and session['user'].get('role') == 'vendor' or session.get('user') and session['user'].get('role') == 'customer' or session.get('user') and session['user'].get('role') == 'admin'  %}
+          <li class="nav-item">
+            <a class="nav-link {% if active_page=='logout' %}active{% endif %}"
+               href="{{ url_for('main.logout') }}">Logout</a>
+          </li>
+          {% endif %}
+          
         </ul>
 
         <form class="d-flex" role="search" action="#" method="get">
@@ -90,5 +104,6 @@
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+
 
 
