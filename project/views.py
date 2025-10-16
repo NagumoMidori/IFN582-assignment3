@@ -2,21 +2,21 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from project.db import (
     get_categories, get_category, get_artworks_for_category, get_artwork,
     add_order, get_orders, check_for_user, add_customer,
-    get_vendor, get_vendor_items,filter_items, _hash, publish_artwork, archive_artwork, update_artwork_details
+    get_vendor, get_vendor_items, filter_items, publish_artwork, archive_artwork
 )
 from project.session import (
-    get_cart, add_to_cart, empty_cart, remove_from_cart, convert_cart_to_order
+    get_cart, add_to_cart, empty_cart, remove_from_cart,
+    convert_cart_to_order, update_cart_item
 )
+
+
 from project.forms import (
-    CheckoutForm, LoginForm, RegisterForm, AddToCartForm,
-    VendorForm, ArtworkForm
+    AddToCartForm, ArtworkForm, CheckoutForm, RegisterForm, LoginForm
 )
 from project.wrappers import only_admins, only_vendors
 from . import mysql
 
 bp = Blueprint('main', __name__)
-
-
 
 @bp.route('/')
 def index():
@@ -31,7 +31,6 @@ def index():
     vendors = get_all_vendors(limit=12)
     artworks = get_latest_artworks(limit=12, category_id=active_category)
     categories = get_categories()
-    print('artworks are =>', artworks[0])
     return render_template(
         'index.html',
         vendors=vendors,
@@ -144,15 +143,33 @@ def cart_add(artwork_id):
     add_to_cart(artwork_id, qty, weeks)
     return redirect(url_for('main.cart'))
 
-@bp.post('/cart/remove/<int:item_id>/')
-def cart_remove(item_id):
-    remove_from_cart(item_id)
-    return redirect(url_for('main.cart'))
-
 @bp.post('/cart/clear/')
 def cart_clear():
     empty_cart()
     flash('Cart cleared.')
+    return redirect(url_for('main.cart'))
+
+@bp.post('/cart/update/<int:item_id>/')
+def cart_update(item_id):
+    quantity = request.form.get('quantity', type=int)
+    
+    if quantity is None or quantity < 1:
+        flash('Invalid quantity. Please enter a valid number.', 'error')
+        return redirect(url_for('main.cart'))
+    
+    if update_cart_item(item_id, quantity):
+        flash('Cart updated successfully.')
+    else:
+        flash('Item not found in cart.', 'error')
+    
+    return redirect(url_for('main.cart'))
+
+@bp.post('/cart/remove/<int:item_id>/')
+def cart_remove(item_id):
+    if remove_from_cart(item_id):
+        flash('Item removed from cart.')
+    else:
+        flash('Item not found in cart.', 'error')
     return redirect(url_for('main.cart'))
 
 # Checkout

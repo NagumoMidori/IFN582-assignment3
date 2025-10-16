@@ -81,13 +81,38 @@
 <main class="container my-4">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      <div class="mb-3">
+      <div class="toast-container position-fixed top-0 end-0 p-4 toast-floating" style="z-index: 1100;">
         {% for category, msg in messages %}
-          <div class="alert alert-{{ 'warning' if category=='error' else category }} mb-2" role="alert">
-            {{ msg }}
+          {% set normalized = 'success' if category in ['success', 'message', None] else category %}
+          {% set toast_class = 'text-bg-success' if normalized == 'success' else 'text-bg-primary' %}
+          {% if normalized != 'success' and normalized in ['info', 'warning', 'error'] %}
+            {% set toast_class = {
+              'info': 'text-bg-info',
+              'warning': 'text-bg-warning',
+              'error': 'text-bg-danger'
+            }[normalized] %}
+          {% endif %}
+          <div class="toast align-items-center {{ toast_class }} border-0 shadow-lg toast-roomy" role="status" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body d-flex align-items-start gap-3">
+              <div class="flex-grow-1">
+                <h6 class="fw-semibold mb-1">Notification</h6>
+                <p class="mb-0">{{ msg }}</p>
+              </div>
+              <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
           </div>
         {% endfor %}
       </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (window.bootstrap && bootstrap.Toast) {
+            document.querySelectorAll('.toast').forEach((toastEl) => {
+              const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+              toast.show();
+            });
+          }
+        });
+      </script>
     {% endif %}
   {% endwith %}
 

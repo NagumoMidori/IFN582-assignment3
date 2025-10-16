@@ -29,7 +29,27 @@
                   </div>
                 </div>
               </td>
-              <td>{{ li.quantity }}</td>
+              <td>
+                <form action="{{ url_for('main.cart_update', item_id=li.cartItem_id) }}" method="post" class="d-inline cart-qty-form">
+                  {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <div class="input-group input-group-sm quantity-stepper" style="width: 130px;">
+                    <button class="btn btn-outline-secondary qty-decrease" type="button" aria-label="Decrease quantity">
+                      <i class="bi bi-dash"></i>
+                    </button>
+                    <input type="number"
+                           name="quantity"
+                           value="{{ li.quantity }}"
+                           min="1"
+                           max="99"
+                           class="form-control text-center qty-input"
+                           inputmode="numeric"
+                           aria-label="Quantity">
+                    <button class="btn btn-outline-secondary qty-increase" type="button" aria-label="Increase quantity">
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
+                </form>
+              </td>
               <td>{{ li.rentalDuration or 1 }}</td>
               <td class="text-end">${{ '%.2f'|format(li.artwork.pricePerWeek) }}</td>
               <td class="text-end">${{ '%.2f'|format(li.artwork.pricePerWeek * li.quantity * li.rentalDuration) }}</td>
@@ -61,6 +81,62 @@
     </div>
   </div>
 {% else %}
-  <p>Your cart is empty. <a href="{{ url_for('main.index') }}">Continue shopping</a>.</p>
+  <section class="empty-cart-banner text-center py-5 py-md-6">
+    <div class="container">
+      <div class="empty-cart-icon mx-auto mb-4">
+        <i class="bi bi-cart3"></i>
+      </div>
+      <h2 class="display-6 fw-semibold mb-3 text-dark">Cart feels a little lonely</h2>
+      <p class="lead text-muted mb-4 mx-auto empty-cart-lead">
+        Continue exploring our gallery to find the perfect pieces for your space.
+      </p>
+      <a class="btn colour__button__2 btn-lg px-5" href="{{ url_for('main.index') }}">
+        <i class="bi bi-arrow-left me-2"></i>Continue shopping
+      </a>
+    </div>
+  </section>
 {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.cart-qty-form').forEach((form) => {
+      const input = form.querySelector('.qty-input');
+      const decrease = form.querySelector('.qty-decrease');
+      const increase = form.querySelector('.qty-increase');
+
+      const submitForm = () => {
+        const min = parseInt(input.getAttribute('min'), 10) || 1;
+        const max = parseInt(input.getAttribute('max'), 10) || Infinity;
+        let value = parseInt(input.value, 10);
+        if (isNaN(value) || value < min) value = min;
+        if (value > max) value = max;
+        input.value = value;
+        form.submit();
+      };
+
+      decrease?.addEventListener('click', () => {
+        const min = parseInt(input.getAttribute('min'), 10) || 1;
+        const current = parseInt(input.value, 10) || min;
+        if (current > min) {
+          input.value = current - 1;
+          submitForm();
+        }
+      });
+
+      increase?.addEventListener('click', () => {
+        const max = parseInt(input.getAttribute('max'), 10) || Infinity;
+        const current = parseInt(input.value, 10) || 0;
+        if (current < max) {
+          input.value = current + 1;
+          submitForm();
+        }
+      });
+
+      input.addEventListener('change', submitForm);
+    });
+  });
+</script>
 {% endblock %}
