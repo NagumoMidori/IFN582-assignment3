@@ -1,5 +1,5 @@
 # IFN582 Assignment 3
-
+# HI
 ## Prerequisites
 - Python 3.10 or newer
 - MySQL Server installed locally and running
