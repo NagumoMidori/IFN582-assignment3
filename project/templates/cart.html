@@ -3,7 +3,8 @@
 {% block title %}Your Cart — Art Lease Gallery{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4 cart-heading">Your Cart</h1>
+<h1 class="visually-hidden">Cart</h1>
+<h2 class="my-3 mb-xl-5 colour__header fw-bold">Your Cart</h2>
 
 {% if cart.items %}
   <div class="card cart-card">
@@ -24,7 +25,7 @@
                 <div class="flex gap-3 items-center cart-item__media">
                   <img src="{{ url_for('static', filename=li.artwork.image) }}" alt="{{ li.artwork.title }}" class="thumb">
                   <div>
-                    <div><a href="{{ url_for('main.item_details', artwork_id=li.artwork_id) }}">{{ li.artwork.title }}</a></div>
+                    <div><a class="item_cart__details" href="{{ url_for('main.item_details', artwork_id=li.artwork_id) }}">{{ li.artwork.title }}</a></div>
                     <small class="status-pill">Status: {{ li.artwork.availabilityStatus }}</small>
                   </div>
                 </div>
