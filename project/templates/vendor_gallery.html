@@ -38,8 +38,11 @@
            class="item__details text-reset">{{item.categoryName}}</a>
         <p class="py-2">AUD {{ '%.2f'|format(item.pricePerWeek) }}</p>
         <div class="mt-auto">
-          <a href="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}"
-             class="btn colour__button me-2">Add to cart <i class="bi bi-cart"></i></a>
+          <form method="post" action="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}">
+              <input type="hidden" name="quantity" value="1">
+              <input type="hidden" name="weeks" value="1">
+              <button type="submit" class="btn colour__button">Add to cart <i class="bi bi-cart"></i></button>
+            </form>
         </div>
       </div>
     </div>
