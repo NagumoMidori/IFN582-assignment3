@@ -40,7 +40,22 @@
 }
 
 .vendor__details{
-    text.vendor__details:hover {
+    text-decoration: none;
+    color: #60435F;
+}
+
+.vendor__details:hover {
+    color: #D67AB1;
+    text-decoration-line: underline;
+}
+
+.item_cart__details{
+    text-decoration: none;
+    color: #60435F;
+    font-weight: 500;
+}
+
+.item_cart__details:hover {
     color: #D67AB1;
     text-decoration-line: underline;
 }
@@ -372,5 +387,6 @@ input[type="checkbox"]:focus {
     .div__newsletter {
         width: 696px;
     }
+
 
 }
