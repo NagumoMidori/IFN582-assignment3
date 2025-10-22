@@ -536,6 +536,11 @@ def publish_artwork(artwork_id: int) -> None:
     cur.execute("UPDATE artworks SET availabilityStatus='Listed' WHERE artwork_id=%s;", (artwork_id,))
     mysql.connection.commit(); cur.close()
 
+def delete_artwork(artwork_id: int, vendor_id: int) -> None:
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM artworks WHERE artwork_id=%s AND vendor_id=%s;", (artwork_id, vendor_id,))
+    mysql.connection.commit(); cur.close()
+
 def update_artwork_details(artwork_id: int, patch: dict) -> None:
     allowed = {"title","itemDescription","pricePerWeek","imageLink","availabilityStartDate","availabilityEndDate","maxQuantity","category_id"}
     sets, params = [], []

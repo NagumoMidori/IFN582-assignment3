@@ -40,6 +40,11 @@
               href="{{ url_for('main.vendor_edit_artwork', artwork_id=item.artwork_id) }}">
               Edit
             </a>
+            <form method="post" action="{{ url_for('main.vendor_delete_artwork', artwork_id=item.artwork_id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this artwork?');">
+                Delete
+              </button>
+            </form>
           </td>
         </tr>
         {% else %}

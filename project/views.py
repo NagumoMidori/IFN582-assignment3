@@ -5,7 +5,7 @@ from flask import (
 
 from project.db import (
     get_categories, get_category, get_artwork,
-    get_orders, get_vendor, get_vendor_items, get_all_vendors,
+    get_orders, get_vendor, get_vendor_items, get_all_vendors,delete_artwork,
     filter_items, generate_kpi, publish_artwork, mysql
 )
 
@@ -707,6 +707,16 @@ def manage():
 def vendor_publish_artwork(artwork_id):
     publish_artwork(artwork_id)
     flash('Artwork published.', 'success')
+    return redirect(url_for('main.vendor_manage'))
+
+
+@bp.post('/vendor/artwork/<int:artwork_id>/delete/')
+@only_vendors
+def vendor_delete_artwork(artwork_id):
+    user = session.get('user', {})
+    vendor_id = int(user.get('id'))
+    delete_artwork(artwork_id, vendor_id)
+    flash('Artwork deleted.', 'success')
     return redirect(url_for('main.vendor_manage'))
 
 
