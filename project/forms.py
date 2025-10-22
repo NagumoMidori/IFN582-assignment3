@@ -109,8 +109,27 @@ class RegisterForm(FlaskForm):
     
 
 class AddToCartForm(FlaskForm):
-    quantity = IntegerField("Quantity", validators=[InputRequired(), NumberRange(min=1)], default=1)
-    weeks    = IntegerField("Weeks", validators=[Optional(), NumberRange(min=1)], default=1)
+    durationPreset = RadioField(
+        "Duration option",
+        choices=[("standard", "Standard - 1 week"), ("custom", "Custom duration")],
+        default="standard",
+        validators=[InputRequired()],
+    )
+    weeks = IntegerField(
+        "Weeks",
+        validators=[Optional(), NumberRange(min=2, max=50, message="Custom duration must be between 2 and 50 weeks.")],
+        render_kw={"min": 2, "max": 50, "placeholder": "Week"},
+    )
+    quantity = IntegerField(
+        "Quantity",
+        validators=[InputRequired(), NumberRange(min=1)],
+        default=1,
+        render_kw={"min": 1},
+    )
+    postcode = StringField(
+        "Delivery postcode",
+        validators=[Optional(), Length(max=10)],
+    )
 
 
 class VendorForm(FlaskForm):

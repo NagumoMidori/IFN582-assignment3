@@ -146,10 +146,38 @@ def item_details(artwork_id):
             default_postcode = row.get('postcode')
 
     form = AddToCartForm()
-    if request.method == 'POST' and form.validate_on_submit():
-        add_to_cart(artwork_id, form.quantity.data or 1, form.weeks.data or 1)
-        flash('Added to cart.')
-        return redirect(url_for('main.cart'))
+    if request.method == 'GET' and default_postcode and not form.postcode.data:
+        form.postcode.data = default_postcode
+
+    if request.method == 'POST':
+        extra_errors = False
+        if form.validate_on_submit():
+            preset = form.durationPreset.data or 'standard'
+            quantity = form.quantity.data or 1
+            weeks = 1 if preset == 'standard' else form.weeks.data
+
+            if preset == 'custom':
+                if weeks is None:
+                    form.weeks.errors.append('Please enter the number of weeks.')
+                    extra_errors = True
+                elif weeks < 2 or weeks > 50:
+                    form.weeks.errors.append('Custom duration must be between 2 and 50 weeks.')
+                    extra_errors = True
+
+            if not extra_errors:
+                postcode = (form.postcode.data or '').strip()
+                if postcode:
+                    session['checkout_postcode'] = postcode
+
+                add_to_cart(artwork_id, quantity, weeks or 1)
+                flash('Added to cart.')
+                return redirect(url_for('main.cart'))
+        else:
+            extra_errors = True
+
+        if extra_errors:
+            flash('Please correct the errors highlighted below.', 'error')
+
     return render_template('item_details.html', item=item, vendor=vendor, category=category, 
                            form=form, default_postcode=default_postcode)
 

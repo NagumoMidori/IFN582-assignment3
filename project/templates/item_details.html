@@ -27,42 +27,73 @@
 
       <div class="card mt-3">
         <form class="container mx-auto" method="post"
-          action="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}">
-          {{ form.csrf_token if form is defined }}
+          action="{{ url_for('main.item_details', artwork_id=item.artwork_id) }}">
+          {{ form.hidden_tag() if form is defined }}
           <div class="mb-3">
             <div class="col-12 col-sm-auto col-form-label colour__display fw-bold">Duration</div>
-            <div class="form-check mt-2">
-              <input class="form-check-input" type="radio" name="durationPreset" id="durationStd" value="2" checked>
-              <label class="form-check-label" for="durationStd">Standard – 1 week</label>
-            </div>
-
-            <div class="row g-2 align-items-center mt-2">
-              <div class="col-12 col-sm-auto">
-                <div class="form-check m-0">
-                  <input class="form-check-input" type="radio" name="durationPreset" id="durationCustom" value="custom">
-                  <label class="form-check-label" for="durationCustom">Custom</label>
+            {% for subfield in form.durationPreset %}
+              {% if loop.first %}
+              <div class="form-check mt-2">
+                {{ subfield(class="form-check-input", id=subfield.id) }}
+                <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label.text }}</label>
+              </div>
+              {% else %}
+              <div class="row g-2 align-items-center mt-2">
+                <div class="col-12 col-sm-auto">
+                  <div class="form-check m-0">
+                    {{ subfield(class="form-check-input", id=subfield.id) }}
+                    <label class="form-check-label" for="{{ subfield.id }}">{{ subfield.label.text }}</label>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-4">
+                  {{ form.weeks(class="form-control w-100", id="weeks") }}
                 </div>
               </div>
-              <div class="col-12 col-sm-auto">
-                <input type="number" class="form-control" id="weeks" name="weeks" min="2" placeholder="Weeks">
-              </div>
+              {% endif %}
+            {% endfor %}
+            {% if form.durationPreset.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.durationPreset.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
             </div>
+            {% endif %}
+            {% if form.weeks.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.weeks.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
 
             <div class="row g-2 align-items-center mb-3 mt-2">
               <label for="qty" class="col-12 col-sm-auto fw-bold colour__display col-form-label">Quantity</label>
               <div class="col-12 col-sm-auto">
-                <input id="qty" name="quantity" type="number" min="1" value="1" class="form-control">
+                {{ form.quantity(class="form-control", id="qty") }}
               </div>
             </div>
+            {% if form.quantity.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.quantity.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
 
             <div class="row g-2 align-items-center mb-3">
               <label for="inputPostcode" class="col-12 col-sm-auto fw-bold colour__display col-form-label">Delivery
                 Postcode</label>
               <div class="col-12 col-sm-auto">
-                <input type="text" name="postcode" id="inputPostcode" class="form-control"
-                  value="{{ default_postcode or '' }}">
+                {{ form.postcode(class="form-control", id="inputPostcode") }}
               </div>
             </div>
+            {% if form.postcode.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.postcode.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
 
             <p class="fs-4 fw-semibold mb-3" id="price">AUD {{ '%.2f'|format(item.pricePerWeek) }}</p>
 
