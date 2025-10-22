@@ -347,6 +347,12 @@ def cart_update(item_id):
     direction = request.form.get('direction')
     quantity = request.form.get('quantity', type=int)
 
+    def _next_url(default):
+        nxt = request.form.get('next', '').strip()
+        if nxt.startswith('/') and not nxt.startswith('//'):
+            return nxt
+        return default
+
     if direction in ('increase', 'decrease'):
         base = quantity if quantity and quantity > 0 else 1
         quantity = base + (1 if direction == 'increase' else -1)
@@ -363,7 +369,7 @@ def cart_update(item_id):
     else:
         flash('Item not found in cart.', 'error')
     
-    return redirect(url_for('main.cart'))
+    return redirect(_next_url(url_for('main.cart')))
 
 @bp.post('/cart/remove/<int:item_id>/')
 @only_guests_or_customers
@@ -372,6 +378,11 @@ def cart_remove(item_id):
         flash('Item removed from cart.')
     else:
         flash('Item not found in cart.', 'error')
+
+    next_url = request.form.get('next', '').strip()
+    if next_url.startswith('/') and not next_url.startswith('//'):
+        return redirect(next_url)
+
     return redirect(url_for('main.cart'))
 
 # Checkout

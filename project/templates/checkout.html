@@ -37,7 +37,25 @@
           </td>
           <td>{{ li.artwork.categoryName or "—" }}</td>
           <td>{{ weeks }} week(s)</td>
-          <td>{{ li.quantity }}</td>
+          <td>
+            <form action="{{ url_for('main.cart_update', item_id=li.cartItem_id) }}" method="post"
+              class="d-inline cart-qty-form">
+              {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+              <input type="hidden" name="next" value="{{ url_for('main.checkout') }}">
+              <div class="input-group input-group-sm quantity-stepper" style="width: 130px;">
+                <button class="btn btn-outline-secondary qty-decrease" name="direction" value="decrease"
+                  type="submit" aria-label="Decrease quantity" {% if li.quantity <= 1 %}disabled{% endif %}>
+                  <i class="bi bi-dash"></i>
+                </button>
+                <input type="number" name="quantity" value="{{ li.quantity }}" min="1" max="99"
+                  class="form-control text-center qty-input" inputmode="numeric" aria-label="Quantity">
+                <button class="btn btn-outline-secondary qty-increase" name="direction" value="increase"
+                  type="submit" aria-label="Increase quantity">
+                  <i class="bi bi-plus"></i>
+                </button>
+              </div>
+            </form>
+          </td>
           <td>AUD {{ '%.2f'|format(price) }}</td>
           <td>AUD {{ '%.2f'|format(line_total) }}</td>
           <td class="text-end">
@@ -45,6 +63,8 @@
 
             <a href="{{ url_for('main.cart') }}" class="btn btn-outline-secondary btn-sm mb-1">Edit</a>
             <form method="post" action="{{ url_for('main.cart_remove', item_id=li.cartItem_id) }}">
+              {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+              <input type="hidden" name="next" value="{{ url_for('main.checkout') }}">
               <button class="btn btn-outline-danger btn-sm mb-1">Delete</button>
             </form>
           </td>
