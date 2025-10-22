@@ -84,9 +84,13 @@ def filter_items(
 ) -> list[dict]:
     """+filterItems(): flexible catalog filtering for UI."""
     sql = """
-      SELECT artwork_id, vendor_id, category_id, title, itemDescription, pricePerWeek, imageLink,
-             availabilityStartDate, availabilityEndDate, maxQuantity, availabilityStatus
-      FROM artworks WHERE 1=1
+      SELECT a.artwork_id, a.vendor_id, a.category_id, a.title, a.itemDescription, a.pricePerWeek, a.imageLink,
+             a.availabilityStartDate, a.availabilityEndDate, a.maxQuantity, a.availabilityStatus,
+             c.categoryName, v.artisticName
+      FROM artworks a
+      LEFT JOIN categories c ON c.category_id = a.category_id
+      LEFT JOIN vendors v ON v.vendor_id = a.vendor_id
+      WHERE 1=1
     """
     params = []
     if category_id is not None:
@@ -101,7 +105,7 @@ def filter_items(
         sql += " AND availabilityStatus=%s"; params.append(availability)
     if q:
         like = f"%{q}%"
-        sql += " AND (title LIKE %s OR itemDescription LIKE %s)"; params.extend([like, like])
+        sql += " AND (a.title LIKE %s OR a.itemDescription LIKE %s OR c.categoryName LIKE %s OR v.artisticName LIKE %s)"; params.extend([like, like, like, like])
     order_by = "artwork_id DESC"
     sort_map = {
         "latest": "artwork_id DESC",

@@ -78,9 +78,9 @@
 
           </ul>
 
-          <form class="d-flex" role="search" action="#" method="get">
+          <form class="d-flex" role="search" action="{{ url_for('main.index') }}" method="get">
             <label for="siteSearch" class="visually-hidden">Search site</label>
-            <input id="siteSearch" class="form-control me-2" type="search" placeholder="Search">
+            <input id="siteSearch" class="form-control me-2" type="search" placeholder="Search" name="q" value="{{ request.args.get('q', '') }}">
             <button class="btn btn-outline-light" type="submit">Search</button>
           </form>
         </div>
