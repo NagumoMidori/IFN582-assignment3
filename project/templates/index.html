@@ -74,98 +74,46 @@
 <section>
   <h2 class="my-3 my-xl-5 text-center colour__header fw-bold" id="gallery">Gallery</h2>
 
-  {# (Optional) basic filter shell, non-functional for now #}
-  <div class="container rounded-5 shadow-lg py-2 mx-auto">
-    <div class="d-flex align-items-center row">
-      <div class="col-3">
-        <div class="dropdown">
-          <button class="btn dropdown-toggle" id="sortBtn" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            Sort
-          </button>
-          <ul class="dropdown-menu colour__drop">
-            <li><a class="dropdown-item" href="#">Latest</a></li>
-            <li><a class="dropdown-item" href="#">Oldest</a></li>
-            <li><a class="dropdown-item" href="#">Lowest price first</a></li>
-            <li><a class="dropdown-item" href="#">Highest price first</a></li>
-          </ul>
-        </div>
+  <form method="get" action="{{ url_for('main.index') }}" class="container rounded-5 shadow-lg py-3 px-3 mx-auto">
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-3">
+        <label for="sort" class="form-label mb-0">Sort</label>
+        <select id="sort" name="sort" class="form-select">
+          <option value="latest" {{ 'selected' if filters.get('sort') == 'latest' else '' }}>Latest</option>
+          <option value="oldest" {{ 'selected' if filters.get('sort') == 'oldest' else '' }}>Oldest</option>
+          <option value="price_asc" {{ 'selected' if filters.get('sort') == 'price_asc' else '' }}>Lowest price first</option>
+          <option value="price_desc" {{ 'selected' if filters.get('sort') == 'price_desc' else '' }}>Highest price first</option>
+          <option value="title" {{ 'selected' if filters.get('sort') == 'title' else '' }}>Title (A–Z)</option>
+        </select>
       </div>
-      <div class="col-3">
-        <div class="dropdown">
-          <button class="btn dropdown-toggle" id="priceBtn" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            Price
-          </button>
-          <ul class="dropdown-menu colour__drop">
-            <li><input type="range" class="form-range colour__thumb p-3" min="30" max="180" step="25" id="maxPrice">
-            </li>
-          </ul>
-        </div>
+      <div class="col-12 col-md-3">
+        <label for="minPrice" class="form-label mb-0">Min price (AUD)</label>
+        <input type="number" step="1" min="0" id="minPrice" name="min" class="form-control"
+          value="{{ filters.get('min') if filters.get('min') is not none else '' }}">
       </div>
-      <div class="col-3">
-        <div class="dropdown">
-          <button class="btn dropdown-toggle" id="categoryBtn" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            Category
-          </button>
-          <ul class="dropdown-menu colour__drop p-2">
-            <li>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="paintingChecked" checked="">
-                <label class="form-check-label" for="paintingChecked">
-                  Painting
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="drawingChecked" checked="">
-                <label class="form-check-label" for="drawingChecked">
-                  Drawing
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="photographyChecked" checked="">
-                <label class="form-check-label" for="photographyChecked">
-                  Photography
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="sculptureChecked" checked="">
-                <label class="form-check-label" for="sculptureChecked">
-                  Sculpture
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="digital_art_Checked" checked="">
-                <label class="form-check-label" for="digital_art_Checked">
-                  Digital Art
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="mixed_media_Checked" checked="">
-                <label class="form-check-label" for="mixed_media_Checked">
-                  Mixed Media
-                </label>
-              </div>
-            </li>
-          </ul>
-        </div>
+      <div class="col-12 col-md-3">
+        <label for="maxPrice" class="form-label mb-0">Max price (AUD)</label>
+        <input type="number" step="1" min="0" id="maxPrice" name="max" class="form-control"
+          value="{{ filters.get('max') if filters.get('max') is not none else '' }}">
       </div>
-      <div class="col-3">
-        <button type="button" id="resetBtn" class="btn colour__button__2 m-1">Reset Filters</button>
+      <div class="col-12 col-md-3">
+        <label for="category" class="form-label mb-0">Category</label>
+        <select id="category" name="category_id" class="form-select">
+          <option value="">All categories</option>
+          {% for category in categories %}
+          <option value="{{ category.category_id }}"
+            {{ 'selected' if filters.get('category_id') == category.category_id else '' }}>
+            {{ category.categoryName }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 d-flex justify-content-end gap-2">
+        <a href="{{ url_for('main.index') }}" class="btn colour__button__2">Reset Filters</a>
+        <button type="submit" class="btn colour__button">Apply Filters</button>
       </div>
     </div>
-  </div>
+  </form>
 
   <div class="container mx-auto my-3 my-xl-5">
     <div class="row g-4">

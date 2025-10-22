@@ -5,7 +5,7 @@ from flask import (
 
 from project.db import (
     get_categories, get_category, get_artwork,
-    get_orders, get_vendor, get_vendor_items, get_all_vendors, get_latest_artworks,
+    get_orders, get_vendor, get_vendor_items, get_all_vendors,
     filter_items, generate_kpi, publish_artwork, mysql
 )
 
@@ -28,22 +28,53 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    items = filter_items(
-        category_id=request.args.get('category_id', type=int),
-        min_price=request.args.get('min', type=float),
-        max_price=request.args.get('max', type=float),
-        q=request.args.get('q')
+    sort = request.args.get('sort', default='latest')
+    min_price = request.args.get('min', type=float)
+    max_price = request.args.get('max', type=float)
+    q = request.args.get('q', default=None)
+    category_id = request.args.get('category_id', type=int)
+
+    if q:
+        q = q.strip() or None
+
+    allowed_sorts = {'latest', 'oldest', 'price_asc', 'price_desc', 'title'}
+    if sort not in allowed_sorts:
+        sort = 'latest'
+
+    has_active_filters = any([
+        category_id,
+        min_price is not None,
+        max_price is not None,
+        q,
+        sort != 'latest'
+    ])
+
+    artworks = filter_items(
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        q=q,
+        availability='Listed',
+        sort=sort,
+        limit=None if has_active_filters else 12
     )
-    active_category = request.args.get('category_id', type=int)
+
     vendors = get_all_vendors(limit=12)
-    artworks = get_latest_artworks(limit=12, category_id=active_category)
     categories = get_categories()
     return render_template(
         'index.html',
         vendors=vendors,
         artworks=artworks,
         categories=categories,
-        active_category=active_category
+        active_category=category_id,
+        filters={
+            'sort': sort,
+            'min': min_price,
+            'max': max_price,
+            'category_id': category_id,
+            'q': q
+        },
+        has_active_filters=has_active_filters
     )
 
 # Category listing

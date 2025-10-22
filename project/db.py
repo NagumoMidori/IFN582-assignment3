@@ -78,7 +78,9 @@ def filter_items(
     max_price: float | None = None,
     q: str | None = None,
     vendor_id: int | None = None,
-    availability: str | None = None  # 'active'/'unlisted'/'leased'
+    availability: str | None = None,  # 'Listed'/'Unlisted'/'Leased'
+    sort: str | None = None,
+    limit: int | None = None
 ) -> list[dict]:
     """+filterItems(): flexible catalog filtering for UI."""
     sql = """
@@ -100,7 +102,19 @@ def filter_items(
     if q:
         like = f"%{q}%"
         sql += " AND (title LIKE %s OR itemDescription LIKE %s)"; params.extend([like, like])
-    sql += " ORDER BY title;"
+    order_by = "artwork_id DESC"
+    sort_map = {
+        "latest": "artwork_id DESC",
+        "oldest": "artwork_id ASC",
+        "price_asc": "pricePerWeek ASC, artwork_id DESC",
+        "price_desc": "pricePerWeek DESC, artwork_id DESC",
+        "title": "title ASC"
+    }
+    if sort in sort_map:
+        order_by = sort_map[sort]
+    sql += f" ORDER BY {order_by}"
+    if limit:
+        sql += " LIMIT %s"; params.append(limit)
     cur = mysql.connection.cursor(); cur.execute(sql, tuple(params))
     rows = cur.fetchall(); cur.close()
     return rows
