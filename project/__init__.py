@@ -12,7 +12,7 @@ def create_app():
     # MySQL configurations
     app.config['MYSQL_USER'] = 'root'
     app.config['MYSQL_PASSWORD'] = 'mysqlroot'   # <-- change to your local password
-    app.config['MYSQL_DB'] = 'assessment3'           # <-- name from assessment3-db.sql
+    app.config['MYSQL_DB'] = 'assessment3_group4'       
     app.config['MYSQL_HOST'] = 'localhost'
     app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
@@ -22,12 +22,16 @@ def create_app():
     from . import views
     app.register_blueprint(views.bp)
 
+    #Expose delivery_cost_from_session() to Jinja templates
+    from .session import delivery_cost_from_session
+    app.jinja_env.globals['delivery_cost_from_session'] = delivery_cost_from_session
+
     @app.errorhandler(404)
     def not_found(e):
-        return render_template("404.html")
+        return render_template("404.html"), 404
 
     @app.errorhandler(500)
     def internal_error(e):
-        return render_template("500.html")
+        return render_template("500.html"), 500
 
     return app

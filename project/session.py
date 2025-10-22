@@ -1,15 +1,13 @@
 from flask import session
-
 from project.db import get_artwork
 from project.models import Cart, CartItem, Order, OrderItem, OrderStatus
-
+from decimal import Decimal
 
 def get_user_dict():
     return session.get('user')
 
 
 def get_cart() -> Cart:
-    """Rehydrate the cart stored in the session into a Cart dataclass."""
     data = session.get('cart') or {'items': []}
     cart = Cart(cart_id=None, cartToken=0, customer_id=None)
     for row in data.get('items', []):
@@ -95,7 +93,7 @@ def convert_cart_to_order(cart: Cart) -> Order:
     order = Order(
         order_id=None,
         customer_id=customer_id,
-        orderStatus=OrderStatus.CONFIRMED if customer_id else OrderStatus.PENDING,
+        orderStatus=OrderStatus.PENDING if customer_id else OrderStatus.PENDING,
         orderDate=None,
         billingAddressID=None,
         deliveryAddressID=None,
@@ -115,3 +113,24 @@ def convert_cart_to_order(cart: Cart) -> Order:
             artwork=cart_item.artwork
         ))
     return order
+def _delivery_cost_for_postcode(value) -> Decimal:
+    """Return delivery cost as Decimal based on AU postcode bands."""
+    try:
+        pc = int(str(value).strip())
+    except Exception:
+        return Decimal("0")  # default when missing/invalid
+
+    if   0    < pc <=  999:  return Decimal("40")
+    elif 1000 <= pc <= 2999:  return Decimal("10")
+    elif 3000 <= pc <= 3999:  return Decimal("15")
+    elif 4000 <= pc <= 4999:  return Decimal("5")
+    elif 5000 <= pc <= 5999:  return Decimal("25")
+    elif 6000 <= pc <= 6999:  return Decimal("30")
+    elif 7000 <= pc <= 7999:  return Decimal("20")
+    elif 8000 <= pc <= 8999:  return Decimal("15")
+    elif 9000 <= pc <= 9999:  return Decimal("5")
+    else:                     return Decimal("150")
+
+def delivery_cost_from_session() -> Decimal:
+    """Reads the user's chosen/remembered postcode and returns the cost."""
+    return _delivery_cost_for_postcode(session.get("checkout_postcode"))

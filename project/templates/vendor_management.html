@@ -1,6 +1,8 @@
+{# vendor_management.html #}
 {% extends "base.html" %}
 {% set active_page = 'vendor_manage' %}
 {% block title %}Vendor Management{% endblock %}
+
 
 {% block content %}
 <h1 class="visually-hidden">Vendor Management</h1>
@@ -10,31 +12,81 @@
   <div class="table-responsive">
     <table class="table table-hover align-middle">
       <thead class="table-light">
-      <tr>
-        <th class="col-1">Preview</th>
-        <th>Title</th>
-        <th>Price/week</th>
-        <th>Category</th>
-        <th>Status</th>
-      </tr>
+        <tr>
+          <th class="col-1">Preview</th>
+          <th>Title</th>
+          <th>Price/week</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Quantity</th>
+          <th>Available Until</th>
+          <th class="text-end">Actions</th>
+        </tr>
       </thead>
       <tbody>
-      {% for item in items %}
-      <tr>
-        <td><img src="{{ url_for('static', filename= item.image) }}"
-                 alt="" class="img-fluid rounded" style="max-width:72px"></td>
-        <td>{{ item.title }}</td>
-        <td>AUD {{ '%.2f'|format(item.pricePerWeek) }}</td>
-        <td>{{ item.categoryName or item.category_id }}</td>
-        <td>{{ item.availabilityStatus }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="5" class="text-center text-muted">No artworks yet.</td></tr>
-      {% endfor %}
+        {% for item in items %}
+
+        <tr>
+          <td><img src="{{ url_for('static', filename= item.image) }}" alt="" class="img-fluid rounded"
+              style="max-width:72px"></td>
+          <td>{{ item.title }}</td>
+          <td>AUD {{ '%.2f'|format(item.pricePerWeek) }}</td>
+          <td>{{ item.categoryName or item.category_id }}</td>
+          <td>{{ item.availabilityStatus }}</td>
+          <td>{{ item.maxQuantity }}</td>
+          <td>{{ item.availabilityEndDate }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary"
+              href="{{ url_for('main.vendor_edit_artwork', artwork_id=item.artwork_id) }}">
+              Edit
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center text-muted">No artworks yet.</td>
+        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
 </section>
+
+<section class="mb-4">
+  <div class="row row-cols-1 row-cols-md-3 g-3">
+
+    <div class="col">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <div class="text-muted">Total Revenue</div>
+          <div class="display-6 colour__display">
+            $ {{ "{:,.2f}".format(kpi.revenue) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <div class="text-muted">Items Leased</div>
+          <div class="display-6 colour__display">{{ kpi.items_leased }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <div class="text-muted">Customers</div>
+          <div class="display-6 colour__display">{{ (kpi.customers_count if kpi is defined else 0) | int }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 
 <section class="mb-5">
   <h2 class="colour__header fw-bold">Publish New Artwork</h2>
@@ -42,55 +94,73 @@
   <form method="post" action="{{ url_for('main.vendor_manage') }}" class="row g-3">
     {{ form.csrf_token }}
 
+    {# Title #}
     <div class="col-md-4">
       <label class="form-label" for="{{ form.title.id }}">Title</label>
-      {{ form.title(class_="form-control") }}
+      {{ form.title(class_="form-control", required=True) }}
+      {% for e in form.title.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Vendor (fixed to 'Me') #}
     <div class="col-md-4">
       <label class="form-label" for="{{ form.vendor_id.id }}">Vendor</label>
-      {{ form.vendor_id(class_="form-select") }}
+      {{ form.vendor_id(class_="form-select", required=True) }}
+      {% for e in form.vendor_id.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Category (optional) #}
     <div class="col-md-4">
       <label class="form-label" for="{{ form.category_id.id }}">Category</label>
       {{ form.category_id(class_="form-select") }}
       <div class="form-text">Optional</div>
+      {% for e in form.category_id.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Pricing & quantity #}
     <div class="col-md-3">
       <label class="form-label" for="{{ form.pricePerWeek.id }}">Price per week (AUD)</label>
-      {{ form.pricePerWeek(class_="form-control") }}
+      {{ form.pricePerWeek(class_="form-control", required=True) }}
+      {% for e in form.pricePerWeek.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
     <div class="col-md-3">
       <label class="form-label" for="{{ form.maxQuantity.id }}">Max quantity</label>
-      {{ form.maxQuantity(class_="form-control") }}
+      {{ form.maxQuantity(class_="form-control", required=True) }}
+      {% for e in form.maxQuantity.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Availability #}
     <div class="col-md-3">
       <label class="form-label" for="{{ form.availabilityStartDate.id }}">Available from</label>
       {{ form.availabilityStartDate(class_="form-control", placeholder="YYYY-MM-DD") }}
+      {% for e in form.availabilityStartDate.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
     <div class="col-md-3">
       <label class="form-label" for="{{ form.availabilityEndDate.id }}">Available until</label>
       {{ form.availabilityEndDate(class_="form-control", placeholder="YYYY-MM-DD") }}
+      {% for e in form.availabilityEndDate.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Image #}
     <div class="col-12">
-      <label class="form-label" for="{{ form.imageLink.id }}">Image URL</label>
-      {{ form.imageLink(class_="form-control") }}
+      <label class="form-label" for="{{ form.imageLink.id }}">Image</label>
+      {{ form.imageLink(class_="form-control", placeholder="/img/filename.jpg", required=True) }}
+      {% for e in form.imageLink.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Status #}
     <div class="col-md-4">
       <label class="form-label" for="{{ form.availabilityStatus.id }}">Status</label>
-      {{ form.availabilityStatus(class_="form-select") }}
+      {{ form.availabilityStatus(class_="form-select", required=True) }}
+      {% for e in form.availabilityStatus.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
+    {# Description #}
     <div class="col-12">
       <label class="form-label" for="{{ form.itemDescription.id }}">Description</label>
-      {{ form.itemDescription(class_="form-control", rows="4") }}
+      {{ form.itemDescription(class_="form-control", rows="4", required=True) }}
+      {% for e in form.itemDescription.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
     </div>
 
     <div class="col-12 d-flex gap-2">
@@ -100,4 +170,3 @@
   </form>
 </section>
 {% endblock %}
-

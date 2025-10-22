@@ -10,19 +10,19 @@
   <div class="table-responsive">
     <table class="table table-hover align-middle">
       <thead class="table-light">
-      <tr>
-        <th scope="col" class="col-1">Item</th>
-        <th scope="col">Category</th>
-        <th scope="col">Lease Period</th>
-        <th scope="col">Qty</th>
-        <th scope="col">Price (per week)</th>
-        <th scope="col">Line Total</th>
-        <th scope="col" class="text-end">Actions</th>
-      </tr>
+        <tr>
+          <th scope="col" class="col-1">Item</th>
+          <th scope="col">Category</th>
+          <th scope="col">Lease Period</th>
+          <th scope="col">Qty</th>
+          <th scope="col">Price (per week)</th>
+          <th scope="col">Line Total</th>
+          <th scope="col" class="text-end">Actions</th>
+        </tr>
       </thead>
       <tbody>
-      {% set subtotal = 0 %}
-      {% for li in cart.items %}
+        {% set subtotal = 0 %}
+        {% for li in cart.items %}
         {% set weeks = li.rentalDuration or 1 %}
         {% set price = li.artwork.pricePerWeek %}
         {% set line_total = (weeks * li.quantity * price) %}
@@ -30,25 +30,30 @@
         <tr>
           <td>
             <div class="d-flex row align-items-center gap-2">
-              <img src="{{url_for('static', filename= li.artwork.image) }}"
-                   alt="" class="img-fluid rounded" style="max-width:72px">
+              <img src="{{url_for('static', filename= li.artwork.image) }}" alt="" class="img-fluid rounded"
+                style="max-width:72px">
               <span class="align-items-center fw-bold">{{ li.artwork.title }}</span>
             </div>
           </td>
-          <td>{{ li.artwork.category_id }}</td>
+          <td>{{ li.artwork.categoryName or "—" }}</td>
           <td>{{ weeks }} week(s)</td>
           <td>{{ li.quantity }}</td>
           <td>AUD {{ '%.2f'|format(price) }}</td>
           <td>AUD {{ '%.2f'|format(line_total) }}</td>
           <td class="text-end">
+
+
+            <a href="{{ url_for('main.cart') }}" class="btn btn-outline-secondary btn-sm mb-1">Edit</a>
             <form method="post" action="{{ url_for('main.cart_remove', item_id=li.cartItem_id) }}">
               <button class="btn btn-outline-danger btn-sm mb-1">Delete</button>
             </form>
           </td>
         </tr>
-      {% else %}
-        <tr><td colspan="7" class="text-center text-muted">Your cart is empty.</td></tr>
-      {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted">Your cart is empty.</td>
+        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
@@ -67,47 +72,136 @@
               <div class="col-12">
                 <label class="form-label" for="{{ form.firstname.id }}">First Name</label>
                 {{ form.firstname(class_="form-control", required=True) }}
+                {% for e in form.firstname.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
               </div>
               <div class="col-12">
                 <label class="form-label" for="{{ form.surname.id }}">Surname</label>
                 {{ form.surname(class_="form-control", required=True) }}
+                {% for e in form.surname.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
               </div>
               <div class="col-md-8">
                 <label class="form-label" for="{{ form.email.id }}">Email</label>
                 {{ form.email(class_="form-control", required=True) }}
+                {% for e in form.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="{{ form.phone.id }}">Phone</label>
                 {{ form.phone(class_="form-control", required=True) }}
-              </div>
-
-              <h2 class="h4 mt-2 colour__header fw-bold">Payment</h2>
-              <div class="col-12 d-flex flex-column gap-2">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="pay" id="payCard" checked>
-                  <label class="form-check-label" for="payCard">
-                    <i class="colour__icon2 bi bi-credit-card fs-6"></i> Credit/Debit Card
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="pay" id="payPaypal">
-                  <label class="form-check-label" for="payPaypal">
-                    <i class="colour__icon2 bi bi-paypal fs-6"></i> PayPal
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="pay" id="payWallet">
-                  <label class="form-check-label" for="payWallet">
-                    <i class="colour__icon2 bi bi-wallet2 fs-6"></i> Digital Wallet
-                  </label>
-                </div>
-              </div>
-
-              <div class="col-12 mt-3 d-flex align-items-center gap-3">
-                {{ form.submit(class_="btn colour__button__2") }}
+                {% for e in form.phone.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
               </div>
             </div>
+
+            <hr class="my-4" />
+
+            {# DELIVERY (REQUIRED) #}
+            <h2 class="h5 colour__header fw-bold mb-2">Delivery address</h2>
+            <div class="row g-3">
+              <div class="col-sm-4">
+                <label class="form-label" for="{{ form.del_streetNumber.id }}">Street number</label>
+                {{ form.del_streetNumber(class_="form-control", required=True) }}
+                {% for e in form.del_streetNumber.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor
+                %}
+              </div>
+              <div class="col-sm-8">
+                <label class="form-label" for="{{ form.del_streetName.id }}">Street name</label>
+                {{ form.del_streetName(class_="form-control", required=True) }}
+                {% for e in form.del_streetName.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.del_city.id }}">City</label>
+                {{ form.del_city(class_="form-control", required=True) }}
+                {% for e in form.del_city.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.del_state.id }}">State</label>
+                {{ form.del_state(class_="form-control", required=True) }}
+                {% for e in form.del_state.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.del_postcode.id }}">Postcode</label>
+                {{ form.del_postcode(class_="form-control", required=True) }}
+                {% for e in form.del_postcode.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.del_country.id }}">Country</label>
+                {{ form.del_country(class_="form-control", required=True) }}
+                {% for e in form.del_country.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <hr class="my-4 d-flex align-items-center" />
+
+            {# BILLING + COPY BUTTON (NO JS) #}
+            <div class="d-flex align-items-center justify-content-between">
+              <h2 class="h5 colour__header fw-bold mb-0">Billing address</h2>
+              {{ form.copy_delivery(class_="btn btn-outline-secondary btn-sm") }}
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-sm-4">
+                <label class="form-label" for="{{ form.bill_streetNumber.id }}">Street number</label>
+                {{ form.bill_streetNumber(class_="form-control") }}
+                {% for e in form.bill_streetNumber.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor
+                %}
+              </div>
+              <div class="col-sm-8">
+                <label class="form-label" for="{{ form.bill_streetName.id }}">Street name</label>
+                {{ form.bill_streetName(class_="form-control") }}
+                {% for e in form.bill_streetName.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor
+                %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.bill_city.id }}">City</label>
+                {{ form.bill_city(class_="form-control") }}
+                {% for e in form.bill_city.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.bill_state.id }}">State</label>
+                {{ form.bill_state(class_="form-control") }}
+                {% for e in form.bill_state.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.bill_postcode.id }}">Postcode</label>
+                {{ form.bill_postcode(class_="form-control") }}
+                {% for e in form.bill_postcode.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.bill_country.id }}">Country</label>
+                {{ form.bill_country(class_="form-control") }}
+                {% for e in form.bill_country.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <hr class="my-4" />
+
+            {# PAYMENT (unchanged UI) #}
+            <h2 class="h4 mt-2 colour__header fw-bold">Payment</h2>
+            <div class="col-12 d-flex flex-column gap-2">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="pay" id="payCard" checked>
+                <label class="form-check-label" for="payCard">
+                  <i class="colour__icon2 bi bi-credit-card fs-6"></i> Credit/Debit Card
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="pay" id="payPaypal">
+                <label class="form-check-label" for="payPaypal">
+                  <i class="colour__icon2 bi bi-paypal fs-6"></i> PayPal
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="pay" id="payWallet">
+                <label class="form-check-label" for="payWallet">
+                  <i class="colour__icon2 bi bi-wallet2 fs-6"></i> Digital Wallet
+                </label>
+              </div>
+            </div>
+
+            <div class="col-12 mt-3 d-flex align-items-center gap-3">
+              {{ form.submit(class_="btn colour__button__2") }}
+            </div>
           </form>
+
         </div>
       </div>
     </div>
@@ -117,23 +211,43 @@
       <div class="card">
         <div class="card-body">
           <h2 class="h4 colour__header fw-bold">Summary</h2>
-          {% set tax = subtotal * 0.10 %}
-          {% set total = subtotal + tax %}
+
+          {# Delivery from view (delivery_cost) OR global function #}
+          {% set delivery = (delivery_cost if delivery_cost is defined else
+          (delivery_cost_from_session() if delivery_cost_from_session is defined else 0)) | float %}
+
+          {# Subtotal: sum of line items (pricePerWeek * weeks * qty), EXCLUDING delivery #}
+          {% set ns = namespace(subtotal=0.0) %}
+          {% for li in (cart.items or []) %}
+          {% set price = (li.artwork.pricePerWeek if li.artwork and li.artwork.pricePerWeek is not none else 0) | float
+          %}
+          {% set qty = (li.quantity if li.quantity is not none else 1) | int %}
+          {% set weeks = (li.rentalDuration if li.rentalDuration is not none else 1) | int %}
+          {% set ns.subtotal = ns.subtotal + (price * qty * weeks) %}
+          {% endfor %}
+
+          {# Tax = 10% of subtotal #}
+          {% set tax = ns.subtotal * 0.10 %}
+          {% set total = ns.subtotal + delivery + tax %}
+
           <ul class="list-group list-group-flush">
             <li class="list-group-item d-flex justify-content-between align-items-center">
-              Subtotal <strong>AUD {{ '%.2f'|format(subtotal) }}</strong>
+              Subtotal <strong>AUD {{ '%.2f'|format(ns.subtotal) }}</strong>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Delivery <strong>AUD {{ '%.2f'|format(delivery) }}</strong>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
               Tax (10%) <strong>AUD {{ '%.2f'|format(tax) }}</strong>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
-              Total <strong>AUD {{ '%.2f'|format(total) }}</strong>
+              Total <strong class="fw-bold">AUD {{ '%.2f'|format(total) }}</strong>
             </li>
           </ul>
+
         </div>
       </div>
     </div>
   </div>
 </section>
 {% endblock %}
-

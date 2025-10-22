@@ -2,10 +2,9 @@ from hashlib import sha256
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Tuple, List
-from typing import List, Optional
 from uuid import uuid4
 from . import mysql
-from project.models import *
+from project.models import Category, Artwork, Vendor, Order, OrderStatus
 
 
 # Catalog
@@ -23,14 +22,14 @@ def get_category(category_id: int) -> Optional[Category]:
     cur.close()
     return Category(row['category_id'], row['categoryName']) if row else None
 
-def get_artworks_for_category(category_id: int) -> List[Artwork]:
+def get_artworks_for_category(category_id: int):
     cur = mysql.connection.cursor()
     cur.execute("""
         SELECT artwork_id, vendor_id, category_id, title, itemDescription,
                pricePerWeek, imageLink, availabilityStartDate, availabilityEndDate,
                maxQuantity, availabilityStatus
         FROM artworks
-        WHERE category_id=%s
+        WHERE category_id=%s AND availabilityStatus='Listed'
         ORDER BY title;
     """, (category_id,))
     rows = cur.fetchall()
@@ -43,25 +42,35 @@ def get_artworks_for_category(category_id: int) -> List[Artwork]:
         maxQuantity=r['maxQuantity'], availabilityStatus=r['availabilityStatus']
     ) for r in rows]
 
+
 def get_artwork(artwork_id: int) -> Optional[Artwork]:
     cur = mysql.connection.cursor()
     cur.execute("""
-        SELECT artwork_id, vendor_id, category_id, title, itemDescription,
-               pricePerWeek, imageLink, availabilityStartDate, availabilityEndDate,
-               maxQuantity, availabilityStatus
-        FROM artworks WHERE artwork_id=%s;
+        SELECT
+            a.artwork_id, a.vendor_id, a.category_id, a.title, a.itemDescription,
+            a.pricePerWeek, a.imageLink, a.availabilityStartDate, a.availabilityEndDate,
+            a.maxQuantity, a.availabilityStatus,
+            c.categoryName                          -- NEW
+        FROM artworks a
+        LEFT JOIN categories c ON c.category_id = a.category_id   -- NEW
+        WHERE a.artwork_id = %s;
     """, (artwork_id,))
     r = cur.fetchone()
     cur.close()
     if not r:
         return None
-    return Artwork(
+
+    aw = Artwork(
         artwork_id=r['artwork_id'], vendor_id=r['vendor_id'], category_id=r['category_id'],
         title=r['title'], itemDescription=r['itemDescription'],
         pricePerWeek=Decimal(str(r['pricePerWeek'])), image=r['imageLink'],
         availabilityStartDate=r['availabilityStartDate'], availabilityEndDate=r['availabilityEndDate'],
         maxQuantity=r['maxQuantity'], availabilityStatus=r['availabilityStatus']
     )
+    # Attach the readable name so templates can use it
+    setattr(aw, 'categoryName', r.get('categoryName'))
+    return aw
+
 
 def filter_items(
     category_id: int | None = None,
@@ -69,7 +78,7 @@ def filter_items(
     max_price: float | None = None,
     q: str | None = None,
     vendor_id: int | None = None,
-    availability: str | None = None  # 'active'|'unlisted'|'leased'
+    availability: str | None = None  # 'active'/'unlisted'/'leased'
 ) -> list[dict]:
     """+filterItems(): flexible catalog filtering for UI."""
     sql = """
@@ -117,30 +126,26 @@ def get_vendor(vendor_id: int) -> Optional[Vendor]:
 def get_vendor_items(vendor_id: int):
     cur = mysql.connection.cursor()
     cur.execute("""
-        SELECT a.artwork_id, a.vendor_id, a.category_id, a.title, a.itemDescription,
-               a.pricePerWeek, a.imageLink, a.availabilityStartDate, a.availabilityEndDate,
-               a.maxQuantity, a.availabilityStatus,
-               c.categoryName
+        SELECT
+            a.artwork_id,
+            a.title,
+            a.pricePerWeek,
+            a.imageLink AS image,
+            a.availabilityStatus,
+            a.maxQuantity,              -
+            a.availabilityEndDate,      
+            a.category_id,
+            c.categoryName
         FROM artworks a
         LEFT JOIN categories c ON c.category_id = a.category_id
-        WHERE a.vendor_id=%s
-        ORDER BY a.title;
+        WHERE a.vendor_id = %s
+        ORDER BY a.artwork_id DESC
     """, (vendor_id,))
     rows = cur.fetchall()
     cur.close()
-    items = []
-    for r in rows:
-        aw = Artwork(
-            artwork_id=r['artwork_id'], vendor_id=r['vendor_id'], category_id=r['category_id'],
-            title=r['title'], itemDescription=r['itemDescription'],
-            pricePerWeek=Decimal(str(r['pricePerWeek'])), image=r['imageLink'],
-            availabilityStartDate=r['availabilityStartDate'], availabilityEndDate=r['availabilityEndDate'],
-            maxQuantity=r['maxQuantity'], availabilityStatus=r['availabilityStatus']
-        )
-    
-        aw.categoryName = r['categoryName']
-        items.append(aw)
-    return items
+    return rows
+
+
 
 # Auth
 def _hash(pw: str) -> str:
@@ -187,6 +192,139 @@ def check_for_user(credential: str, password_plain: str) -> Optional[Tuple[str, 
                           "email": row["email"], "phone": row["phone"]}
     return None
 
+def check_for_user_with_role(credential: str, password_plain: str, role_hint: str | None = None) -> Optional[Tuple[str, dict]]:
+    """
+    Role-aware login. Admin is always checked first (by username), regardless of role_hint.
+    role_hint: 'customer' / 'vendor' / 'admin' / 'auto' (or None)
+    """
+    pwd = _hash(password_plain)
+    cur = mysql.connection.cursor()
+
+    # 1) Admin first, regardless of the selected radio
+    cur.execute("""
+        SELECT admin_id AS id, username
+        FROM admins
+        WHERE username=%s AND admin_password=%s
+    """, (credential, pwd))
+    row = cur.fetchone()
+    if row:
+        cur.close()
+        return "admin", {"id": row["id"], "firstname": "Admin", "surname": row["username"],
+                         "email": None, "phone": None}
+
+    # Normalize hint
+    hint = (role_hint or "auto").lower()
+
+    if hint == "admin":
+        # If user explicitly chose Admin and we didn't match above, stop here.
+        cur.close()
+        return None
+
+    if hint == "customer":
+        # Customer only
+        cur.execute("""
+            SELECT customer_id AS id, email, phone, firstName, lastName
+            FROM customers
+            WHERE email=%s AND customer_password=%s
+        """, (credential, pwd))
+        row = cur.fetchone(); cur.close()
+        if row:
+            return "customer", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
+                                "email": row["email"], "phone": row["phone"]}
+        return None
+
+    if hint == "vendor":
+        # Vendor only
+        cur.execute("""
+            SELECT vendor_id AS id, email, phone, firstName, lastName
+            FROM vendors
+            WHERE email=%s AND vendor_password=%s
+        """, (credential, pwd))
+        row = cur.fetchone(); cur.close()
+        if row:
+            return "vendor", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
+                              "email": row["email"], "phone": row["phone"]}
+        return None
+
+    # Auto: fall back to your existing order (customer / vendor)
+    cur.execute("""
+        SELECT customer_id AS id, email, phone, firstName, lastName
+        FROM customers
+        WHERE email=%s AND customer_password=%s
+    """, (credential, pwd))
+    row = cur.fetchone()
+    if row:
+        cur.close()
+        return "customer", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
+                            "email": row["email"], "phone": row["phone"]}
+
+    cur.execute("""
+        SELECT vendor_id AS id, email, phone, firstName, lastName
+        FROM vendors
+        WHERE email=%s AND vendor_password=%s
+    """, (credential, pwd))
+    row = cur.fetchone(); cur.close()
+    if row:
+        return "vendor", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
+                          "email": row["email"], "phone": row["phone"]}
+    return None
+
+
+def check_for_user_with_hint(credential: str, password_plain: str, hint: str) -> Optional[Tuple[str, dict]]:
+    """
+    Try admin by username first (always allowed), then check ONLY the hinted role.
+    hint: 'customer' or 'vendor'
+    """
+    pwd = _hash(password_plain)
+    cur = mysql.connection.cursor()
+
+    # 1) Admin (by username)
+    cur.execute("""
+        SELECT admin_id AS id, username
+        FROM admins
+        WHERE username=%s AND admin_password=%s
+    """, (credential, pwd))
+    row = cur.fetchone()
+    if row:
+        cur.close()
+        return "admin", {
+            "id": row["id"], "firstname": "Admin", "surname": row["username"],
+            "email": None, "phone": None
+        }
+
+    # 2) Hinted role only
+    if hint == "customer":
+        cur.execute("""
+            SELECT customer_id AS id, email, phone, firstName, lastName
+            FROM customers
+            WHERE email=%s AND customer_password=%s
+        """, (credential, pwd))
+        row = cur.fetchone()
+        cur.close()
+        if row:
+            return "customer", {
+                "id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
+                "email": row["email"], "phone": row["phone"]
+            }
+
+    elif hint == "vendor":
+        cur.execute("""
+            SELECT vendor_id AS id, email, phone, firstName, lastName
+            FROM vendors
+            WHERE email=%s AND vendor_password=%s
+        """, (credential, pwd))
+        row = cur.fetchone()
+        cur.close()
+        if row:
+            return "vendor", {
+                "id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
+                "email": row["email"], "phone": row["phone"]
+            }
+
+    # No match
+    return None
+
+
 def add_customer(form):
     cur = mysql.connection.cursor()
     cur.execute("""
@@ -220,8 +358,6 @@ def register(email: str, phone: str, password_plain: str, first: str, last: str,
     mysql.connection.commit(); cur.close()
     return new_id
 
-def update_profile():
-    pass
 
 def subscribe_to_newsletter(customer_id: int, subscribed: bool = True) -> None:
     cur = mysql.connection.cursor()
@@ -335,11 +471,7 @@ def confirm_payment(order_id: int) -> None:
     cur.execute("UPDATE orders SET orderStatus='Confirmed' WHERE order_id=%s;", (order_id,))
     mysql.connection.commit(); cur.close()
 
-def arrange_delivery():
-    pass
 
-def edit_order():
-    pass
 
 
 def get_all_vendors(limit: Optional[int] = None) -> List[dict]:
@@ -364,10 +496,11 @@ def get_latest_artworks(limit: Optional[int] = 12, category_id: Optional[int] = 
         SELECT artwork_id, vendor_id, category_id, title, itemDescription, pricePerWeek,
                imageLink, availabilityStartDate, availabilityEndDate, maxQuantity, availabilityStatus
         FROM artworks
+        WHERE availabilityStatus='Listed'
     """
     params = []
     if category_id:
-        sql += " WHERE category_id = %s"
+        sql += " AND category_id = %s"
         params.append(category_id)
     sql += " ORDER BY artwork_id DESC"
     if limit:
@@ -377,6 +510,7 @@ def get_latest_artworks(limit: Optional[int] = 12, category_id: Optional[int] = 
     rows = cur.fetchall()
     cur.close()
     return rows
+
 
 
 def publish_artwork(artwork_id: int) -> None:
@@ -403,31 +537,44 @@ def archive_artwork(artwork_id: int) -> None:
     mysql.connection.commit(); cur.close()
 
 def generate_kpi(vendor_id: int) -> dict:
-
     cur = mysql.connection.cursor()
-    cur.execute("SELECT COUNT(*) AS totalItems, SUM(availabilityStatus='Listed') AS activeItems FROM artworks WHERE vendor_id=%s;", (vendor_id,))
-    inv = cur.fetchone() or {"totalItems":0,"activeItems":0}
 
-    # Orders and revenue for this vendor (joining vendor's artworks)
+    # Inventory
     cur.execute("""
-        SELECT COUNT(DISTINCT oi.order_id) AS ordersCnt,
-               COALESCE(SUM(oi.unitPrice * oi.quantity * COALESCE(oi.rentalDuration,1)),0) AS revenue
+        SELECT
+            COUNT(*) AS totalItems,
+            COALESCE(SUM(availabilityStatus='Listed'), 0) AS activeItems
+        FROM artworks
+        WHERE vendor_id = %s
+    """, (vendor_id,))
+    inv = cur.fetchone() or {"totalItems": 0, "activeItems": 0}
+
+    # Sales KPIs (Confirmed orders only) and distinct customers
+    cur.execute("""
+        SELECT
+            COUNT(DISTINCT oi.order_id) AS ordersCnt,
+            COUNT(DISTINCT o.customer_id) AS customersCnt,
+            COALESCE(SUM(oi.quantity), 0) AS itemsLeased,
+            COALESCE(SUM(oi.unitPrice * oi.quantity * COALESCE(oi.rentalDuration, 1)), 0) AS revenue
         FROM order_item oi
         JOIN artworks a ON a.artwork_id = oi.artwork_id
-        WHERE a.vendor_id=%s
+        JOIN orders   o ON o.order_id    = oi.order_id
+        WHERE a.vendor_id = %s
+          AND o.orderStatus = 'Confirmed'
+          AND o.customer_id IS NOT NULL
     """, (vendor_id,))
-    sales = cur.fetchone() or {"ordersCnt":0,"revenue":0}
+    sales = cur.fetchone() or {"ordersCnt": 0, "customersCnt": 0, "itemsLeased": 0, "revenue": 0}
     cur.close()
+
     return {
-        "inventory_total": int(inv["totalItems"] or 0),
-        "inventory_active": int(inv["activeItems"] or 0),
-        "orders_count": int(sales["ordersCnt"] or 0),
-        "revenue": str(sales["revenue"] or 0),
+        "inventory_total":  int(inv.get("totalItems") or 0),
+        "inventory_active": int(inv.get("activeItems") or 0),
+        "orders_count":     int(sales.get("ordersCnt") or 0),
+        "items_leased":     int(sales.get("itemsLeased") or 0),
+        "customers_count":  int(sales.get("customersCnt") or 0),   # 👈 NEW
+        "revenue":          Decimal(str(sales.get("revenue") or 0))
     }
 
-
-def validate_address():
-    pass
 
 def select_default_address(customer_id: int, address_id: int) -> None:
     cur = mysql.connection.cursor()
@@ -435,10 +582,139 @@ def select_default_address(customer_id: int, address_id: int) -> None:
     mysql.connection.commit(); cur.close()
 
 
-def ensure_customer():
-    pass
-def update_artwork_details():
+
+def ensure_address(
+    streetNumber: str,
+    streetName: str,
+    city: str,
+    state: str,
+    postcode: str,
+    country: Optional[str] = None,
+) -> int:
+    country = (country or "Australia").strip()
+    p = lambda s: (s or "").strip().lower()
+
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT address_id
+          FROM addresses
+         WHERE LOWER(TRIM(streetNumber))=%s
+           AND LOWER(TRIM(streetName))=%s
+           AND LOWER(TRIM(city))=%s
+           AND LOWER(TRIM(state))=%s
+           AND LOWER(TRIM(postcode))=%s
+           AND LOWER(TRIM(country))=%s
+         LIMIT 1
+    """, (p(streetNumber), p(streetName), p(city), p(state), p(postcode), p(country)))
+    row = cur.fetchone()
+    if row:
+        cur.close()
+        return row["address_id"]
+
+    cur.execute("""
+        INSERT INTO addresses (streetNumber, streetName, city, state, postcode, country)
+        VALUES (%s,%s,%s,%s,%s,%s)
+    """, (streetNumber.strip(), streetName.strip(), city.strip(), state.strip(), postcode.strip(), country.strip()))
+    mysql.connection.commit()
+    addr_id = cur.lastrowid
+    cur.close()
+    return addr_id
+
+def insert_address(streetNumber: str, streetName: str, city: str, state: str, postcode: str, country: str) -> int:
+    # Backward-compatible
+    return ensure_address(streetNumber, streetName, city, state, postcode, country)
+
+
+def register_account(form) -> int:
+    role = (form.account_type.data or "customer").strip().lower()
+    if role not in ("customer", "vendor"):
+        raise ValueError("Invalid account type")
+
+    # 1) Address (required)
+    addr_id = ensure_address(
+        form.streetNumber.data.strip(),
+        form.streetName.data.strip(),
+        form.city.data.strip(),
+        form.state.data.strip(),
+        form.postcode.data.strip(),
+        form.country.data.strip()
+    )
+    ...
+
+
+    # 2) Person row
+    cur = mysql.connection.cursor()
+    pw = _hash(form.password.data)
+
+    if role == "customer":
+        cur.execute("""
+            INSERT INTO customers (email, phone, customer_password, firstName, lastName, address_id, newsletterSubscription)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            form.email.data.strip(), form.phone.data.strip(), pw,
+            form.firstname.data.strip(), form.surname.data.strip(), addr_id,
+            1 if getattr(form, "newsletterSubscription", None) and form.newsletterSubscription.data else 0
+        ))
+        new_id = cur.lastrowid
+    else:
+        # Vendor requires artisticName, bio, profilePictureLink (validated in form)
+        cur.execute("""
+            INSERT INTO vendors (email, phone, vendor_password, firstName, lastName, address_id,
+                                 artisticName, bio, profilePictureLink)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            form.email.data.strip(), form.phone.data.strip(), pw,
+            form.firstname.data.strip(), form.surname.data.strip(), addr_id,
+            form.artisticName.data.strip(), form.bio.data.strip(), form.profilePictureLink.data.strip()
+        ))
+        new_id = cur.lastrowid
+
+    mysql.connection.commit()
+    cur.close()
+    return new_id
+
+def ensure_customer(email: str, phone: str, first: str, last: str) -> int:
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT customer_id FROM customers WHERE email=%s LIMIT 1;", (email,))
+    row = cur.fetchone()
+    if row:
+        cur.close()
+        return int(row["customer_id"])
+
+    cur.execute("""
+        INSERT INTO customers (email, phone, customer_password, firstName, lastName, address_id)
+        VALUES (%s,%s,%s,%s,%s,NULL)
+    """, (email, phone, _hash(uuid4().hex[:12]), first, last))
+    new_id = cur.lastrowid
+    mysql.connection.commit()
+    cur.close()
+    return new_id
+
+def email_phone_in_use(role: str, email: str, phone: str) -> Tuple[bool, bool]:
+    """
+    Return (email_exists, phone_exists) for the target table only.
+    role: 'customer' | 'vendor'
+    """
+    email = (email or "").strip()
+    phone = (phone or "").strip()
+    cur = mysql.connection.cursor()
+
+    if role == "customer":
+        cur.execute("SELECT 1 FROM customers WHERE email=%s LIMIT 1;", (email,))
+        email_exists = bool(cur.fetchone())
+        cur.execute("SELECT 1 FROM customers WHERE phone=%s LIMIT 1;", (phone,))
+        phone_exists = bool(cur.fetchone())
+    else:
+        cur.execute("SELECT 1 FROM vendors WHERE email=%s LIMIT 1;", (email,))
+        email_exists = bool(cur.fetchone())
+        cur.execute("SELECT 1 FROM vendors WHERE phone=%s LIMIT 1;", (phone,))
+        phone_exists = bool(cur.fetchone())
+
+    cur.close()
+    return email_exists, phone_exists
+
+def arrange_delivery():
     pass
 
-def get_categories ():
+def edit_order():
     pass

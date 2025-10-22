@@ -1,25 +1,163 @@
 {% extends 'base.html' %}
-{% set active_page = 'register' %}
-{% import 'bootstrap5/form.html' as wtf %}
-
 {% block title %}Register — Art Lease Gallery{% endblock %}
 
 {% block content %}
-<section class="shadow-sm mb-5 mt-5">
+<section class="mb-5 mt-5">
   <div class="container">
-    <div class="row">
-      <div class="col-12">
-        <h1>Create Your Account</h1>
-        <p>
-          Thanks for choosing Art Lease Gallery. Fill in your details to create an account.
-          Already registered?
-          <a href="{{ url_for('main.login') }}">Log in here</a>.
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+
+        <header class="mb-4">
+          <h1 class="h3 colour__header mb-1">Create your account</h1>
+          <p class="text-muted mb-0">Choose your account type and fill in your details below.</p>
+        </header>
+
+        {# derive the current selection #}
+        {% set selected = (form.account_type.data or 'customer') %}
+
+        {# Toggle buttons (just links) #}
+        <div class="btn-group mb-3" role="group" aria-label="Choose account type">
+          <a href="{{ url_for('main.register', type='customer') }}"
+             class="btn btn-outline-secondary {% if selected == 'customer' %}active{% endif %}">
+            Customer
+          </a>
+          <a href="{{ url_for('main.register', type='vendor') }}"
+             class="btn btn-outline-secondary {% if selected == 'vendor' %}active{% endif %}">
+            Vendor
+          </a>
+        </div>
+
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4 p-md-5">
+            <form method="post" action="{{ url_for('main.register') }}">
+              {{ form.csrf_token }}
+
+              {# bind the selection back into the form as a hidden field #}
+              {{ form.account_type(value=selected) }}
+
+              {% if form.errors %}
+                <div class="alert alert-danger small mb-4">
+                  Please check the highlighted fields and try again.
+                </div>
+              {% endif %}
+
+              <!-- Name -->
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="{{ form.firstname.id }}">First name</label>
+                  {{ form.firstname(class_="form-control", required=True) }}
+                  {% for e in form.firstname.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="{{ form.surname.id }}">Last name</label>
+                  {{ form.surname(class_="form-control", required=True) }}
+                  {% for e in form.surname.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <!-- Contact -->
+              <div class="row g-3 mt-1">
+                <div class="col-md-7">
+                  <label class="form-label" for="{{ form.email.id }}">Email</label>
+                  {{ form.email(class_="form-control", required=True, inputmode="email") }}
+                  {% for e in form.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label" for="{{ form.phone.id }}">Phone</label>
+                  {{ form.phone(class_="form-control", required=True, inputmode="tel") }}
+                  {% for e in form.phone.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                  <label class="form-label" for="{{ form.password.id }}">Password</label>
+                  {{ form.password(class_="form-control", required=True) }}
+                  {% for e in form.password.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="{{ form.confirm.id }}">Confirm password</label>
+                  {{ form.confirm(class_="form-control", required=True) }}
+                  {% for e in form.confirm.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+              </div>
+
+              <!-- Address (always required) -->
+              <hr class="my-4">
+              <h2 class="h6 colour__header mb-3">Address</h2>
+              <div class="row g-3">
+                <div class="col-sm-4">
+                  <label class="form-label" for="{{ form.streetNumber.id }}">Street number</label>
+                  {{ form.streetNumber(class_="form-control", required=True) }}
+                  {% for e in form.streetNumber.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-sm-8">
+                  <label class="form-label" for="{{ form.streetName.id }}">Street name</label>
+                  {{ form.streetName(class_="form-control", required=True) }}
+                  {% for e in form.streetName.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="{{ form.city.id }}">City</label>
+                  {{ form.city(class_="form-control", required=True) }}
+                  {% for e in form.city.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="{{ form.state.id }}">State</label>
+                  {{ form.state(class_="form-control", required=True) }}
+                  {% for e in form.state.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="{{ form.postcode.id }}">Postcode</label>
+                  {{ form.postcode(class_="form-control", required=True) }}
+                  {% for e in form.postcode.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="{{ form.country.id }}">Country</label>
+                  {{ form.country(class_="form-control", required=True, value="Australia") }}
+                  {% for e in form.country.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+              </div>
+
+              {% if selected == 'customer' %}
+              <div class="form-check my-4">
+                {{ form.newsletterSubscription(class_="form-check-input", id="newsletter") }}
+                <label class="form-check-label" for="newsletter">Subscribe to newsletter</label>
+              </div>
+              {% endif %}
+
+              {# Vendor details: render only in Vendor mode #}
+              {% if selected == 'vendor' %}
+                <hr class="my-4">
+                <h2 class="h6 colour__header mb-2">Vendor details</h2>
+                <p class="small text-muted mb-3">These fields are required for vendor accounts.</p>
+                <div class="mb-3">
+                  <label class="form-label" for="{{ form.artisticName.id }}">Artistic / Studio name</label>
+                  {{ form.artisticName(class_="form-control") }}
+                  {% for e in form.artisticName.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" for="{{ form.bio.id }}">Short bio</label>
+                  {{ form.bio(class_="form-control", rows="4") }}
+                  {% for e in form.bio.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="mb-4">
+                  <label class="form-label" for="{{ form.profilePictureLink.id }}">Profile picture</label>
+                  {{ form.profilePictureLink(class_="form-control", placeholder="/img/figure.jpg") }}
+                  {% for e in form.profilePictureLink.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                </div>
+              {% endif %}
+
+              <div class="d-grid">
+                {{ form.submit(class_="btn colour__button__2 btn-lg") }}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <p class="mt-3 mb-0 small text-muted">
+          Already registered? <a class="vendor__details" href="{{ url_for('main.login') }}">Log in here</a>.
         </p>
-      </div>
-    </div>
-    <div class="row mt-4 justify-content-center p-3">
-      <div class="col-md-6">
-        {{ wtf.render_form(form) }}
       </div>
     </div>
   </div>

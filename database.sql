@@ -1,5 +1,5 @@
-CREATE DATABASE assessment3;
-USE assessment3;
+CREATE DATABASE assessment3_group4;
+USE assessment3_group4;
 
 CREATE TABLE admins (
     admin_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -141,12 +141,12 @@ INSERT INTO admins (admin_id, username, admin_password) VALUES
 (2,'admin2','hash2');
 
 INSERT INTO vendors (vendor_id, email, phone, vendor_password, firstName, lastName, address_id, artisticName, bio, profilePictureLink) VALUES
-(1,'loremipsum@project582.com','0401000001','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','Lorem','Ipsum',6,'LorIp','Abstracts from Brisbane River.','averie-woodard-4nulm-JUYFo-unsplash.jpg'),
-(2,'dolorsitamet@project582.com','0401000002','hashB','Dolor','Sit Amet',5,'DodoSA','Minimalist line drawings','charlie-green-3JmfENcL24M-unsplash.jpg'),
-(3,'sedvitae@project582.com','0401000003','hashC','Sed','Vitae',4,'S-Vit','Limited prints.','raamin-ka-uR51HXLO7G0-unsplash.jpg'),
-(4,'namiabortis@project582.com','0401000004','hashD','Nam','Iobortis',3,'NamIo','Original only.','vicky-hladynets-uyaTT9u6AvI-unsplash.jpg'),
-(5,'utvulputate@project582.com','0401000005','hashE','Ut','Vulputate',2,'Utate','An intimate gallery.','tamara-bellis-JoKS3XweV50-unsplash.jpg'),
-(6,'nullaeget@project582.com','0401000006','hashF','Nulla','Eget',1,'Mr. Eget','Abstracts from Toowoomba.','cord-allman-qMK2NZXIhP0-unsplash.jpg');
+(1,'loremipsum@project582.com','0401000001','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','Lorem','Ipsum',6,'LorIp','Lorem Ipsum is a visual artist whose work captures the vibrant soul of Brisbane through both brush and lens. Passionate about painting and photography, Lorem blends urban textures with natural light, turning everyday scenes into poetic compositions. From the winding Brisbane River to the buzz of Fortitude Valley, their art celebrates the city rhythm and charm. Whether on canvas or through a camera, Lorem’s creative eye reveals stories hidden in plain sight—inviting viewers to see Brisbane anew, one frame at a time.','/img/averie-woodard-4nulm-JUYFo-unsplash.jpg'),
+(2,'dolorsitamet@project582.com','0401000002','hashB','Dolor','Sit Amet',5,'DodoSA','Minimalist line drawings','/img/charlie-green-3JmfENcL24M-unsplash.jpg'),
+(3,'sedvitae@project582.com','0401000003','hashC','Sed','Vitae',4,'S-Vit','Limited prints.','/img/raamin-ka-uR51HXLO7G0-unsplash.jpg'),
+(4,'namiabortis@project582.com','0401000004','hashD','Nam','Iobortis',3,'NamIo','Original only.','/img/vicky-hladynets-uyaTT9u6AvI-unsplash.jpg'),
+(5,'utvulputate@project582.com','0401000005','hashE','Ut','Vulputate',2,'Utate','An intimate gallery.','/img/tamara-bellis-JoKS3XweV50-unsplash.jpg'),
+(6,'nullaeget@project582.com','0401000006','hashF','Nulla','Eget',1,'Mr. Eget','Abstracts from Toowoomba.','/img/cord-allman-qMK2NZXIhP0-unsplash.jpg');
 
 INSERT INTO customers (customer_id, email, phone, customer_password, firstName, lastName, address_id, newsletterSubscription) VALUES
 (1,'dusty@example.com','0411000001','8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92','Dusty','Lee',7,0),
@@ -169,7 +169,7 @@ VALUES
 (10,2,2,'Copper Wave','Cold-forged copper',38,'/img/a010.jpg','2025-06-10','2025-12-31',1,'Listed'),
 (11,2,2,'Timber Form','Reclaimed timber',26,'/img/a011.jpg','2025-06-25','2025-12-31',1,'Listed'),
 (12,2,2,'Marble Fold','White marble',60,'/img/a012.jpg','2025-07-02','2025-12-31',1,'Listed'),
-(13,1,4,'Story Bridge Dawn','High-res JPEG',15,'/img/a013.jpg','2025-05-05','2025-12-31',999,'Listed'),
+(13,1,4,'Story Bridge Dawn','A striking steel cantilever bridge spans a wide river in Brisbane, showcasing intricate latticework and bold engineering. Below, a motorboat cuts through the water, leaving a crisp wake. Urban buildings and lush greenery line both shores, blending nature with infrastructure. The sky is clear with wispy clouds, adding depth to this dynamic cityscape.',15,'/img/a013.jpg','2025-05-05','2025-12-31',999,'Listed'),
 (14,1,4,'Night City Print','A3 Giclée digital',11,'/img/a014.jpg','2025-06-11','2025-12-11',999,'Listed'),
 (15,2,3,'Portrait Session 1hr','Studio portrait booking',120,'/img/a015.jpg','2025-07-15','2025-12-31',10,'Listed');
 

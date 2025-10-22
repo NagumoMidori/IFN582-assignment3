@@ -3,7 +3,8 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List
-from uuid import uuid4
+
+
 
 class AvailabilityStatus(str, Enum):
     LISTED = "Listed"
@@ -115,11 +116,25 @@ class Cart:
     items: List["CartItem"] = field(default_factory=list)
 
     def total_using_current_prices(self) -> Decimal:
+    # local import avoids circulars; correct package path
+        try:
+            from project.session import delivery_cost_from_session
+            delivery = delivery_cost_from_session()
+        except Exception:
+            # if we're outside a request context or the import fails, don't crash totals
+            delivery = Decimal("0.00")
+
         total = Decimal("0.00")
         for li in self.items:
             if li.artwork and li.artwork.pricePerWeek is not None:
-                total += Decimal(str(li.artwork.pricePerWeek)) * (li.rentalDuration or 1) * (li.quantity or 1)
-        return total.quantize(Decimal("0.01"))
+                total += (
+                    Decimal(str(li.artwork.pricePerWeek))
+                    * Decimal(li.rentalDuration or 1)
+                    * Decimal(li.quantity or 1)
+                )
+
+        return (total + delivery).quantize(Decimal("0.01"))
+
 
 @dataclass
 class CartItem:

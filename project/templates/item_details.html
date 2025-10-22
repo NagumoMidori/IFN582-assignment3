@@ -17,13 +17,18 @@
         <a class="vendor__details" href="{{ url_for('main.vendor_gallery', vendor_id = vendor.vendor_id) }}">{{
           vendor.artisticName }}</a>
       </p>
-      <p class="text-muted mb-2">Category: {{ category.categoryName if category else item.category_id }}</p>
+      <p class="text-muted mb-2">Category:
+        <a class="vendor__details" href="{{ url_for('main.category_items', category_id=item.category_id) }}">
+          {{ category.categoryName if category else item.category_id }}</a>
+
+      </p>
 
       <p>{{ item.itemDescription or 'No description.' }}</p>
 
       <div class="card mt-3">
         <form class="container mx-auto" method="post"
           action="{{ url_for('main.cart_add', artwork_id=item.artwork_id) }}">
+          {{ form.csrf_token if form is defined }}
           <div class="mb-3">
             <div class="col-12 col-sm-auto col-form-label colour__display fw-bold">Duration</div>
             <div class="form-check mt-2">
@@ -54,7 +59,8 @@
               <label for="inputPostcode" class="col-12 col-sm-auto fw-bold colour__display col-form-label">Delivery
                 Postcode</label>
               <div class="col-12 col-sm-auto">
-                <input type="text" class="form-control" id="inputPostcode">
+                <input type="text" name="postcode" id="inputPostcode" class="form-control"
+                  value="{{ default_postcode or '' }}">
               </div>
             </div>
 
