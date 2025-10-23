@@ -1,3 +1,5 @@
+import re
+
 from flask import (
     Blueprint, render_template, request, redirect,
     url_for, flash, session, abort
@@ -458,6 +460,11 @@ def checkout():
                     'bill_state':        form.bill_state.data or '',
                     'bill_postcode':     form.bill_postcode.data or '',
                     'bill_country':      form.bill_country.data or '',
+                    # payment (method only; sensitive fields are re-entered)
+                    'payment_method':    (form.payment_method.data or 'card'),
+                    'paypal_email':      form.paypal_email.data or '',
+                    'wallet_provider':   form.wallet_provider.data or '',
+                    'wallet_reference':  form.wallet_reference.data or '',
                 }
                 session['register_prefill'] = {
                     'firstname': form.firstname.data or '',
@@ -523,6 +530,27 @@ def checkout():
                 order.customer_id = cust_id
             order.deliveryAddressID = deliv_id
             order.billingAddressID  = bill_id
+
+            payment_method = (form.payment_method.data or 'card').lower()
+            payment_details = {}
+            if payment_method == 'card':
+                card_number_clean = re.sub(r"\D+", "", form.card_number.data or "")
+                payment_details = {
+                    'card_name':      (form.card_name.data or '').strip(),
+                    'card_last4':     card_number_clean[-4:] if len(card_number_clean) >= 4 else '',
+                    'card_expiry':    (form.card_expiry.data or '').strip(),
+                }
+            elif payment_method == 'paypal':
+                payment_details = {
+                    'paypal_email': (form.paypal_email.data or '').strip()
+                }
+            elif payment_method == 'wallet':
+                payment_details = {
+                    'wallet_provider':  (form.wallet_provider.data or '').strip(),
+                    'wallet_reference': (form.wallet_reference.data or '').strip(),
+                }
+            order.paymentMethod = payment_method
+            order.paymentDetails = payment_details
 
             add_order(order)
             empty_cart()
@@ -595,6 +623,11 @@ def checkout():
             if pf.get('bill_state'):        form.bill_state.data        = pf['bill_state']
             if pf.get('bill_postcode'):     form.bill_postcode.data     = pf['bill_postcode']
             if pf.get('bill_country'):      form.bill_country.data      = pf['bill_country']
+            # payment preferences (non-sensitive)
+            if pf.get('payment_method'):    form.payment_method.data    = pf['payment_method']
+            if pf.get('paypal_email'):      form.paypal_email.data      = pf['paypal_email']
+            if pf.get('wallet_provider'):   form.wallet_provider.data   = pf['wallet_provider']
+            if pf.get('wallet_reference'):  form.wallet_reference.data  = pf['wallet_reference']
 
         # 4) Apply postcode hint LAST so it overrides DB prefill (if present)
         pc_hint = (session.get('checkout_postcode') or '').strip()

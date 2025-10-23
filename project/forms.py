@@ -1,3 +1,5 @@
+import re
+
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, PasswordField, TextAreaField, SubmitField, RadioField,
@@ -34,9 +36,92 @@ class CheckoutForm(FlaskForm):
     bill_postcode     = StringField("Postcode",      validators=[Length(max=10)])
     bill_country      = StringField("Country",       validators=[Length(max=100)])
 
+    # Payment (selection handled via template CSS for now)
+    payment_method   = RadioField(
+        "Payment method",
+        choices=[
+            ("card",   "Credit / Debit Card"),
+            ("paypal", "PayPal"),
+            ("wallet", "Digital Wallet")
+        ],
+        default="card",
+        validators=[InputRequired()]
+    )
+    card_name        = StringField("Name on card", validators=[Optional(), Length(max=100)])
+    card_number      = StringField("Card number", validators=[Optional(), Length(min=12, max=19)])
+    card_expiry      = StringField("Expiry (MM/YY)", validators=[Optional(), Length(max=7)])
+    card_cvv         = StringField("Security code", validators=[Optional(), Length(min=3, max=4)])
+
+    paypal_email     = StringField("PayPal email", validators=[Optional(), Email(), Length(max=100)])
+
+    wallet_provider  = StringField("Wallet provider", validators=[Optional(), Length(max=50)])
+    wallet_reference = StringField("Wallet reference", validators=[Optional(), Length(max=100)])
+
     # Buttons
     copy_delivery = SubmitField("Same as delivery")
     submit        = SubmitField("Place order")
+
+    def validate(self, extra_validators=None):
+        ok = super().validate(extra_validators=extra_validators)
+        if not ok:
+            return False
+
+        method = (self.payment_method.data or '').lower()
+        if method == 'card':
+            required = {
+                'card_name': self.card_name.data,
+                'card_number': self.card_number.data,
+                'card_expiry': self.card_expiry.data,
+                'card_cvv': self.card_cvv.data,
+            }
+            missing = False
+            for field, value in required.items():
+                if not (value or '').strip():
+                    getattr(self, field).errors.append("Required for card payments.")
+                    missing = True
+            card_number_clean = re.sub(r"\s+", "", self.card_number.data or "")
+            if card_number_clean:
+                if not card_number_clean.isdigit():
+                    self.card_number.errors.append("Card number must contain digits only.")
+                    missing = True
+                elif not (12 <= len(card_number_clean) <= 19):
+                    self.card_number.errors.append("Card number must be between 12 and 19 digits.")
+                    missing = True
+            if self.card_cvv.data:
+                if not self.card_cvv.data.isdigit():
+                    self.card_cvv.errors.append("CVV must contain digits only.")
+                    missing = True
+                elif len(self.card_cvv.data) not in (3, 4):
+                    self.card_cvv.errors.append("CVV must be 3 or 4 digits.")
+                    missing = True
+            if self.card_expiry.data:
+                expiry = self.card_expiry.data.strip()
+                if not re.match(r"^(0[1-9]|1[0-2])\/\d{2}$", expiry):
+                    self.card_expiry.errors.append("Use MM/YY format.")
+                    missing = True
+            if missing:
+                return False
+
+        elif method == 'paypal':
+            if not (self.paypal_email.data or '').strip():
+                self.paypal_email.errors.append("PayPal email is required.")
+                return False
+
+        elif method == 'wallet':
+            missing = False
+            if not (self.wallet_provider.data or '').strip():
+                self.wallet_provider.errors.append("Provider is required for digital wallets.")
+                missing = True
+            if not (self.wallet_reference.data or '').strip():
+                self.wallet_reference.errors.append("Reference is required for digital wallets.")
+                missing = True
+            if missing:
+                return False
+        else:
+            self.payment_method.errors.append("Please choose a payment method.")
+            return False
+
+        return True
 
 
 class LoginForm(FlaskForm):

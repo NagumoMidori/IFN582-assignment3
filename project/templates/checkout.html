@@ -79,6 +79,15 @@
   </div>
 </section>
 
+{% if cart.items %}
+<div class="d-flex justify-content-end mt-2 mb-3">
+  <form action="{{ url_for('main.cart_clear') }}" method="post" class="m-0">
+    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+    <button type="submit" class="btn btn-secondary">Clear basket</button>
+  </form>
+</div>
+{% endif %}
+
 <section>
   <div class="row g-4">
     <div class="col-12 col-md-7">
@@ -196,24 +205,106 @@
 
             {# PAYMENT (unchanged UI) #}
             <h2 class="h4 mt-2 colour__header fw-bold">Payment</h2>
-            <div class="col-12 d-flex flex-column gap-2">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="pay" id="payCard" checked>
-                <label class="form-check-label" for="payCard">
-                  <i class="colour__icon2 bi bi-credit-card fs-6"></i> Credit/Debit Card
+
+            {% set selected_payment = form.payment_method.data or form.payment_method.default or 'card' %}
+
+            <div class="col-12 payment-methods checkout-payment">
+              {% if form.payment_method.errors %}
+              <div class="invalid-feedback d-block mb-2">{{ form.payment_method.errors[0] }}</div>
+              {% endif %}
+              <div class="payment-option">
+                <input
+                  class="payment-option__control form-check-input"
+                  type="radio"
+                  id="payment-card"
+                  name="{{ form.payment_method.name }}"
+                  value="card"
+                  {% if selected_payment == 'card' %}checked{% endif %}
+                >
+                <label class="payment-option__label fw-semibold d-flex align-items-center gap-2 mb-1" for="payment-card">
+                  <i class="colour__icon2 bi bi-credit-card fs-5"></i>
+                  Credit / Debit Card
                 </label>
+                <p class="form-text mb-2">We accept Visa, Mastercard, and American Express.</p>
+                <div class="payment-option__panel payment-panel--card">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label" for="{{ form.card_name.id }}">Name on card</label>
+                      {{ form.card_name(class_="form-control") }}
+                      {% for e in form.card_name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" for="{{ form.card_number.id }}">Card number</label>
+                      {{ form.card_number(class_="form-control", inputmode="numeric", placeholder="XXXX XXXX XXXX XXXX") }}
+                      {% for e in form.card_number.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                      <label class="form-label" for="{{ form.card_expiry.id }}">Expiry (MM/YY)</label>
+                      {{ form.card_expiry(class_="form-control", placeholder="MM/YY") }}
+                      {% for e in form.card_expiry.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                      <label class="form-label" for="{{ form.card_cvv.id }}">CVV</label>
+                      {{ form.card_cvv(class_="form-control", inputmode="numeric", placeholder="123") }}
+                      {% for e in form.card_cvv.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="pay" id="payPaypal">
-                <label class="form-check-label" for="payPaypal">
-                  <i class="colour__icon2 bi bi-paypal fs-6"></i> PayPal
+
+              <div class="payment-option">
+                <input
+                  class="payment-option__control form-check-input"
+                  type="radio"
+                  id="payment-paypal"
+                  name="{{ form.payment_method.name }}"
+                  value="paypal"
+                  {% if selected_payment == 'paypal' %}checked{% endif %}
+                >
+                <label class="payment-option__label fw-semibold d-flex align-items-center gap-2 mb-1" for="payment-paypal">
+                  <i class="colour__icon2 bi bi-paypal fs-5"></i>
+                  PayPal
                 </label>
+                <p class="form-text mb-2">Secure checkout powered by PayPal.</p>
+                <div class="payment-option__panel payment-panel--paypal">
+                  <div class="row g-3">
+                    <div class="col-md-6 col-lg-4">
+                      <label class="form-label" for="{{ form.paypal_email.id }}">PayPal email</label>
+                      {{ form.paypal_email(class_="form-control", placeholder="name@example.com") }}
+                      {% for e in form.paypal_email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="pay" id="payWallet">
-                <label class="form-check-label" for="payWallet">
-                  <i class="colour__icon2 bi bi-wallet2 fs-6"></i> Digital Wallet
+
+              <div class="payment-option">
+                <input
+                  class="payment-option__control form-check-input"
+                  type="radio"
+                  id="payment-wallet"
+                  name="{{ form.payment_method.name }}"
+                  value="wallet"
+                  {% if selected_payment == 'wallet' %}checked{% endif %}
+                >
+                <label class="payment-option__label fw-semibold d-flex align-items-center gap-2 mb-1" for="payment-wallet">
+                  <i class="colour__icon2 bi bi-wallet2 fs-5"></i>
+                  Digital Wallet
                 </label>
+                <p class="form-text mb-2">Enter the wallet details associated with your purchase.</p>
+                <div class="payment-option__panel payment-panel--wallet">
+                  <div class="row g-3">
+                    <div class="col-md-6 col-lg-4">
+                      <label class="form-label" for="{{ form.wallet_provider.id }}">Wallet provider</label>
+                      {{ form.wallet_provider(class_="form-control", placeholder="e.g. Apple Pay") }}
+                      {% for e in form.wallet_provider.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                      <label class="form-label" for="{{ form.wallet_reference.id }}">Wallet reference</label>
+                      {{ form.wallet_reference(class_="form-control", placeholder="Transaction ID or handle") }}
+                      {% for e in form.wallet_reference.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -230,7 +321,7 @@
     <div class="col-12 col-md-5">
       <div class="card">
         <div class="card-body">
-          <h2 class="h4 colour__header fw-bold">Summary</h2>
+          <h2 class="h4 colour__header fw-bold mb-0">Summary</h2>
 
           {# Delivery from view (delivery_cost) OR global function #}
           {% set delivery = (delivery_cost if delivery_cost is defined else

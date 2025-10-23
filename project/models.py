@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 
 
@@ -158,6 +158,8 @@ class Order:
     billingAddress: Optional[Address] = None
     deliveryAddress: Optional[Address] = None
     items: List["OrderItem"] = field(default_factory=list)
+    paymentMethod: Optional[str] = None
+    paymentDetails: Dict[str, str] = field(default_factory=dict)
 
     def total(self) -> Decimal:
         total = Decimal("0.00")

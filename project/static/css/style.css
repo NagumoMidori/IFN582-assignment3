@@ -206,6 +206,51 @@ input[type="checkbox"]:focus {
   gap: 1rem; flex-wrap: wrap; padding: 1.5rem 1.75rem;
 }
 
+/* Checkout payment selection */
+.checkout-payment .payment-option {
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  background: var(--bs-body-bg, #fff);
+  position: relative;
+}
+
+.checkout-payment .payment-option:last-of-type {
+  margin-bottom: 0;
+}
+
+.checkout-payment .payment-option__control {
+  position: absolute;
+  clip: rect(0, 0, 0, 0);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.checkout-payment .payment-option__label {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.checkout-payment .payment-option__control:focus-visible + .payment-option__label {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+.checkout-payment .payment-option__control:checked + .payment-option__label {
+  color: var(--bs-primary, #0d6efd);
+}
+
+.checkout-payment .payment-option__panel {
+  display: none;
+  margin-top: 1rem;
+}
+
+.checkout-payment .payment-option__control:checked ~ .payment-option__panel {
+  display: block;
+}
+
 /* Responsive tweaks */
 @media (max-width: 768px) {
   .thumb { width: 88px; height: 88px; }
