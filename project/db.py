@@ -94,25 +94,25 @@ def filter_items(
     """
     params = []
     if category_id is not None:
-        sql += " AND category_id=%s"; params.append(category_id)
+        sql += " AND a.category_id=%s"; params.append(category_id)
     if vendor_id is not None:
-        sql += " AND vendor_id=%s"; params.append(vendor_id)
+        sql += " AND a.vendor_id=%s"; params.append(vendor_id)
     if min_price is not None:
-        sql += " AND pricePerWeek >= %s"; params.append(min_price)
+        sql += " AND a.pricePerWeek >= %s"; params.append(min_price)
     if max_price is not None:
-        sql += " AND pricePerWeek <= %s"; params.append(max_price)
+        sql += " AND a.pricePerWeek <= %s"; params.append(max_price)
     if availability:
-        sql += " AND availabilityStatus=%s"; params.append(availability)
+        sql += " AND a.availabilityStatus=%s"; params.append(availability)
     if q:
         like = f"%{q}%"
         sql += " AND (a.title LIKE %s OR a.itemDescription LIKE %s OR c.categoryName LIKE %s OR v.artisticName LIKE %s)"; params.extend([like, like, like, like])
-    order_by = "artwork_id DESC"
+    order_by = "a.artwork_id DESC"
     sort_map = {
-        "latest": "artwork_id DESC",
-        "oldest": "artwork_id ASC",
-        "price_asc": "pricePerWeek ASC, artwork_id DESC",
-        "price_desc": "pricePerWeek DESC, artwork_id DESC",
-        "title": "title ASC"
+        "latest": "a.artwork_id DESC",
+        "oldest": "a.artwork_id ASC",
+        "price_asc": "a.pricePerWeek ASC, a.artwork_id DESC",
+        "price_desc": "a.pricePerWeek DESC, a.artwork_id DESC",
+        "title": "a.title ASC"
     }
     if sort in sort_map:
         order_by = sort_map[sort]
