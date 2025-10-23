@@ -7,7 +7,7 @@
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="shortcut icon" href="{{ url_for('static', filename='images/shop.svg') }}" type="image/svg+xml">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='/img/shop.svg') }}" type="image/svg+xml">
   <title>{% block title %}Art Lease Gallery{% endblock %}</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
@@ -46,6 +46,13 @@
             </li>
             {% endif %}
 
+            {% if session.get('user') and session['user'].get('role') == 'admin' %}
+            <li class="nav-item">
+              <a class="nav-link {% if active_page=='manage' %}active{% endif %}"
+                href="{{ url_for('main.manage') }}">Manage</a>
+            </li>
+            {% endif %}
+
             {% if not user or role == 'customer' %}
             <li class="nav-item">
               <a class="nav-link {% if active_page=='cart' %}active{% endif %}" href="{{ url_for('main.cart') }}">
@@ -78,9 +85,9 @@
 
           </ul>
 
-          <form class="d-flex" role="search" action="{{ url_for('main.index') }}" method="get">
+          <form class="d-flex" role="search" action="#" method="get">
             <label for="siteSearch" class="visually-hidden">Search site</label>
-            <input id="siteSearch" class="form-control me-2" type="search" placeholder="Search" name="q" value="{{ request.args.get('q', '') }}">
+            <input id="siteSearch" class="form-control me-2" type="search" placeholder="Search">
             <button class="btn btn-outline-light" type="submit">Search</button>
           </form>
         </div>
