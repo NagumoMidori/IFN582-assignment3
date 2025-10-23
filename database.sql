@@ -66,29 +66,6 @@ FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL,
 FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-
-
-
-CREATE TABLE carts (
-cart_id INT AUTO_INCREMENT PRIMARY KEY,
-cartToken INT UNIQUE NOT NULL,
-customer_id INT,
-cart_status ENUM('Active', 'Abandoned', 'Converted') NOT NULL DEFAULT 'Active',
-deliveryAddressID INT,
-FOREIGN KEY (deliveryAddressID) REFERENCES addresses(address_id) ON DELETE SET NULL ON UPDATE CASCADE,
-FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL ON UPDATE CASCADE
-);
-
-CREATE TABLE cart_items (
-cartItem_id INT AUTO_INCREMENT PRIMARY KEY, 
-cart_id INT,
-artwork_id INT,
-quantity INT,
-rentalDuration INT,
-FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE ON UPDATE CASCADE,
-FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id) ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
 CREATE TABLE orders (
 order_id INT AUTO_INCREMENT PRIMARY KEY,
 customer_id INT,
