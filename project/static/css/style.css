@@ -251,6 +251,25 @@ input[type="checkbox"]:focus {
   display: block;
 }
 
+.error-page-banner .container {
+  max-width: 720px;
+}
+
+.error-page__code {
+  color: var(--brand);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.error-page__title {
+  color: var(--brand-dark);
+}
+
+.error-page__message {
+  color: rgba(0, 0, 0, 0.66);
+  max-width: 560px;
+}
+
 /* Responsive tweaks */
 @media (max-width: 768px) {
   .thumb { width: 88px; height: 88px; }

@@ -28,10 +28,20 @@ def create_app():
 
     @app.errorhandler(404)
     def not_found(e):
-        return render_template("404.html"), 404
+        return render_template(
+            "error.html",
+            code=404,
+            title="Page Not Found",
+            message="Sorry, we couldn't find what you were looking for."
+        ), 404
 
     @app.errorhandler(500)
     def internal_error(e):
-        return render_template("500.html"), 500
+        return render_template(
+            "error.html",
+            code=500,
+            title="Something went wrong",
+            message="The server encountered an error. Please try again in a few minutes."
+        ), 500
 
     return app

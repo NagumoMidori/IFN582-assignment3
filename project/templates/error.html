@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} — {{ title }}{% endblock %}
+
+{% block content %}
+<section class="empty-cart-banner error-page-banner text-center py-5 py-md-6 my-5">
+  <div class="container">
+    <p class="error-page__code display-4 fw-bold mb-3">{{ code }}</p>
+    <h1 class="error-page__title h1 fw-semibold mb-3">{{ title }}</h1>
+    <p class="error-page__message lead mb-4 mx-auto">
+      {{ message }}
+    </p>
+    <a class="btn colour__button__2 btn-lg px-4" href="{{ url_for('main.index') }}">
+      <i class="bi bi-arrow-left-short"></i> Back to Home
+    </a>
+  </div>
+</section>
+{% endblock %}
