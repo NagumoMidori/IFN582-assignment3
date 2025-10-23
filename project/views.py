@@ -733,12 +733,127 @@ def logout():
     flash('You have been logged out.')
     return redirect(url_for('main.index'))
 
-# Admin (orders overview) TO BE DEVELOPPED
-@bp.route('/manage/')
+# Admin (orders overview) 
+@bp.route('/manage/', methods=['GET'])
 @only_admins
 def manage():
-    orders = get_orders()
-    return render_template('manage.html', orders=orders)
+    """Admin: list all orders and order items; optional ?order_id= filter."""
+    oid = request.args.get('order_id', type=int)
+
+    where = "WHERE o.order_id=%s" if oid else ""
+    params = (oid,) if oid else ()
+
+    cur = mysql.connection.cursor()
+
+    # Orders + customer info
+    cur.execute(f"""
+        SELECT o.order_id, o.customer_id, o.orderStatus, o.orderDate,
+               o.billingAddressID, o.deliveryAddressID,
+               c.firstName, c.lastName, c.email, c.phone
+          FROM orders o
+          LEFT JOIN customers c ON c.customer_id = o.customer_id
+          {where}
+         ORDER BY o.orderDate DESC, o.order_id DESC
+    """, params)
+    orders = cur.fetchall()
+
+    # Order items (⚠ uses real PK name orderItem_id, but ALIASED for template)
+    where_items = "WHERE oi.order_id=%s" if oid else ""
+    cur.execute(f"""
+        SELECT
+          oi.orderItem_id AS order_item_id,   -- alias for template
+          oi.order_id,
+          oi.artwork_id,
+          oi.quantity,
+          oi.rentalDuration,
+          oi.unitPrice,
+          a.title AS artworkTitle
+        FROM order_item oi
+        LEFT JOIN artworks a ON a.artwork_id = oi.artwork_id
+        {where_items}
+        ORDER BY oi.order_id DESC, oi.orderItem_id ASC
+    """, params)
+    order_items = cur.fetchall()
+
+    # Status choices (prefer Enum; fallback to distinct values)
+    try:
+        from project.models import OrderStatus
+        statuses = [s.value for s in OrderStatus]
+    except Exception:
+        cur.execute("SELECT DISTINCT orderStatus FROM orders ORDER BY orderStatus")
+        statuses = [r['orderStatus'] for r in cur.fetchall()]
+
+    cur.close()
+
+    return render_template(
+        'manage.html',
+        orders=orders,
+        order_items=order_items,
+        statuses=statuses,
+        filter_order_id=oid
+    )
+
+
+@bp.route('/manage/update/', methods=['POST'])
+@only_admins
+def manage_update():
+    """
+    Admin updater for 'orders' and 'order_item'.
+    Each row posts a tiny form with hidden 'entity' + PK.
+    """
+    entity = (request.form.get('entity') or '').strip()
+    cur = mysql.connection.cursor()
+
+    if entity == 'order':
+        order_id = request.form.get('order_id', type=int)
+        # Editable columns in 'orders'
+        cols = {
+            'customer_id':       request.form.get('customer_id', type=int),
+            'orderStatus':       request.form.get('orderStatus') or None,
+            'orderDate':         request.form.get('orderDate') or None,
+            'billingAddressID':  request.form.get('billingAddressID', type=int),
+            'deliveryAddressID': request.form.get('deliveryAddressID', type=int),
+        }
+        sets, params = [], []
+        for k, v in cols.items():
+            if v is not None and v != '':
+                sets.append(f"{k}=%s")
+                params.append(v)
+        if sets:
+            params.append(order_id)
+            cur.execute(f"UPDATE orders SET {', '.join(sets)} WHERE o.order_id=%s".replace("o.", ""), tuple(params))
+            mysql.connection.commit()
+        flash(f"Order {order_id} updated.", "success")
+
+    elif entity == 'order_item':
+        oi_id = request.form.get('order_item_id', type=int)  # template posts 'order_item_id'
+        # Editable columns in 'order_item'
+        cols = {
+            'order_id':       request.form.get('order_id', type=int),
+            'artwork_id':     request.form.get('artwork_id', type=int),
+            'quantity':       request.form.get('quantity', type=int),
+            'rentalDuration': request.form.get('rentalDuration', type=int),
+            'unitPrice':      request.form.get('unitPrice') or None,  # let MySQL cast
+        }
+        sets, params = [], []
+        for k, v in cols.items():
+            if v is not None and v != '':
+                sets.append(f"{k}=%s")
+                params.append(v)
+        if sets:
+            params.append(oi_id)
+            # ⚠ real PK in schema is orderItem_id (camelCase)
+            cur.execute(f"UPDATE order_item SET {', '.join(sets)} WHERE orderItem_id=%s", tuple(params))
+            mysql.connection.commit()
+        flash(f"Order item {oi_id} updated.", "success")
+
+    else:
+        flash("Unknown entity.", "warning")
+
+    cur.close()
+
+    # Keep current filter (?order_id=) after update
+    return redirect(url_for('main.manage', order_id=request.form.get('persist_order_filter', type=int)))
 
 
 @bp.post('/vendor/artwork/<int:artwork_id>/publish/')
@@ -834,3 +949,4 @@ def vendor_edit_artwork(artwork_id):
 
     cur.close()
     return render_template('edit_artwork.html', form=form, artwork=row, categories=cats)
+
