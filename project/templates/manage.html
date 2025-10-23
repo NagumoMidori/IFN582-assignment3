@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% set active_page = 'manage' %}
+{% block title %}Admin — Manage Orders{% endblock %}
+
+{% block content %}
+<header class="mb-4 d-flex flex-wrap gap-3 align-items-end justify-content-between">
+  <div>
+    <h1 class="h3 colour__header mb-1">Admin: Orders & Items</h1>
+  </div>
+
+  <form class="d-flex gap-2" method="get" action="{{ url_for('main.manage') }}">
+    <input type="number" class="form-control form-control-sm" name="order_id" placeholder="Filter by Order ID"
+      value="{{ filter_order_id or '' }}">
+    <button class="btn btn-sm colour__button__2">Filter</button>
+    <a class="btn btn-sm colour__button" href="{{ url_for('main.manage') }}">Clear</a>
+  </form>
+</header>
+
+<section class="mb-5">
+  <div class="card cart-card shadow-sm">
+    <div class="card-header bg-white">
+      <strong class="colour__display">Orders</strong>
+    </div>
+    <div class="card-body p-0">
+      {% if orders %}
+      <div class="table-responsive">
+        <table class="table cart-table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Date (YYYY-MM-DD HH:MM:SS)</th>
+              <th>BillingAddrID</th>
+              <th>DeliveryAddrID</th>
+              <th>Customer ID</th>
+              <th class="text-end">Save</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+            <tr>
+              <td><code>{{ o.order_id }}</code></td>
+              <td>
+                <div class="fw-semibold">{{ o.firstName or '' }} {{ o.lastName or '' }}</div>
+                <div class="small text-muted small__text">
+                  {{ o.email or '' }}{% if o.phone %} · {{ o.phone }}{% endif %}
+                </div>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('main.manage_update') }}" class="row row-cols-lg-auto g-2">
+                  <input type="hidden" name="entity" value="order">
+                  <input type="hidden" name="order_id" value="{{ o.order_id }}">
+                  <input type="hidden" name="persist_order_filter" value="{{ filter_order_id or '' }}">
+                  <div class="col-12">
+                    <select class="form-select form-select-sm" name="orderStatus" required>
+                      {% for s in statuses %}
+                      <option value="{{ s }}" {% if o.orderStatus==s %}selected{% endif %}>{{ s }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="text" class="form-control form-control-sm" name="orderDate" value="{{ o.orderDate }}">
+                </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="number" class="form-control form-control-sm" name="billingAddressID"
+                    value="{{ o.billingAddressID or '' }}">
+                </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="number" class="form-control form-control-sm" name="deliveryAddressID"
+                    value="{{ o.deliveryAddressID or '' }}">
+                </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="number" class="form-control form-control-sm" name="customer_id"
+                    value="{{ o.customer_id or '' }}">
+                </div>
+              </td>
+              <td class="text-end">
+                <div class="col-12">
+                  <button class="btn btn-sm colour__button">Save</button>
+                </div>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-3"><em class="text-muted">No orders found.</em></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="card cart-card shadow-sm">
+    <div class="card-header bg-white">
+      <strong class="colour__display">Order Items</strong>
+    </div>
+    <div class="card-body p-0">
+      {% if order_items %}
+      <div class="table-responsive">
+        <table class="table cart-table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Item ID</th>
+              <th>Order ID</th>
+              <th>Artwork</th>
+              <th>Qty</th>
+              <th>Weeks</th>
+              <th>Unit Price</th>
+              <th class="text-end">Save</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in order_items %}
+            <tr>
+              <td><code>{{ it.order_item_id }}</code></td>
+              <td>
+                <form method="post" action="{{ url_for('main.manage_update') }}" class="row row-cols-lg-auto g-2">
+                  <input type="hidden" name="entity" value="order_item">
+                  <input type="hidden" name="order_item_id" value="{{ it.order_item_id }}">
+                  <input type="hidden" name="persist_order_filter" value="{{ filter_order_id or '' }}">
+                  <div class="col-12">
+                    <input type="number" class="form-control form-control-sm" name="order_id" value="{{ it.order_id }}">
+                  </div>
+              </td>
+              <td>
+                <div class="small text-muted mb-1 small__text">{{ it.artworkTitle or '—' }}</div>
+                <div class="col-12">
+                  <input type="number" class="form-control form-control-sm" name="artwork_id"
+                    value="{{ it.artwork_id }}">
+                </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="number" min="1" class="form-control form-control-sm" name="quantity"
+                    value="{{ it.quantity }}">
+                </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="number" min="1" class="form-control form-control-sm" name="rentalDuration"
+                    value="{{ it.rentalDuration or 1 }}">
+                </div>
+              </td>
+              <td>
+                <div class="col-12">
+                  <input type="text" class="form-control form-control-sm" name="unitPrice" value="{{ it.unitPrice }}">
+                </div>
+              </td>
+              <td class="text-end">
+                <div class="col-12">
+                  <button class="btn btn-sm colour__button">Save</button>
+                </div>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-3"><em class="text-muted">No order items found.</em></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
