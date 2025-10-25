@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 from wtforms import (
     StringField, PasswordField, TextAreaField, SubmitField, RadioField,
     SelectField, IntegerField, DecimalField, DateField, BooleanField,
-    HiddenField, URLField
+    HiddenField
 )
 from wtforms.validators import (
     DataRequired, InputRequired, Email, Length, Optional, NumberRange,
@@ -65,7 +65,7 @@ class CheckoutForm(FlaskForm):
         ok = super().validate(extra_validators=extra_validators)
         if not ok:
             return False
-
+        """    
         method = (self.payment_method.data or '').lower()
         if method == 'card':
             required = {
@@ -120,7 +120,7 @@ class CheckoutForm(FlaskForm):
         else:
             self.payment_method.errors.append("Please choose a payment method.")
             return False
-
+        """
         return True
 
 
@@ -216,18 +216,6 @@ class AddToCartForm(FlaskForm):
         validators=[Optional(), Length(max=10)],
     )
 
-
-class VendorForm(FlaskForm):
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=100)])
-    phone = StringField("Phone", validators=[DataRequired(), Length(max=20)])
-    vendor_password = PasswordField("Password", validators=[DataRequired(), Length(min=6, max=255)])
-    firstName = StringField("First name", validators=[DataRequired(), Length(max=100)])
-    lastName = StringField("Last name", validators=[DataRequired(), Length(max=100)])
-    address_id = SelectField("Address (optional)", coerce=int, validators=[Optional()])  
-    artisticName = StringField("Artistic name", validators=[DataRequired(), Length(max=100)])
-    bio = TextAreaField("Bio", validators=[DataRequired()])
-    profilePictureLink = StringField("Profile picture", validators=[DataRequired(), Length(max=255)])
-    submit = SubmitField("Create Vendor")
 
 class ArtworkForm(FlaskForm):
     vendor_id   = SelectField("Vendor", coerce=int, validators=[DataRequired()])          

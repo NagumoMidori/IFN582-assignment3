@@ -1,10 +1,11 @@
 from hashlib import sha256
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict
 from uuid import uuid4
 from . import mysql
 from project.models import Category, Artwork, Vendor, Order, OrderStatus
+from project.forms import ArtworkForm
 
 
 # Catalog
@@ -50,9 +51,9 @@ def get_artwork(artwork_id: int) -> Optional[Artwork]:
             a.artwork_id, a.vendor_id, a.category_id, a.title, a.itemDescription,
             a.pricePerWeek, a.imageLink, a.availabilityStartDate, a.availabilityEndDate,
             a.maxQuantity, a.availabilityStatus,
-            c.categoryName                          -- NEW
+            c.categoryName                          
         FROM artworks a
-        LEFT JOIN categories c ON c.category_id = a.category_id   -- NEW
+        LEFT JOIN categories c ON c.category_id = a.category_id   
         WHERE a.artwork_id = %s;
     """, (artwork_id,))
     r = cur.fetchone()
@@ -82,7 +83,6 @@ def filter_items(
     sort: str | None = None,
     limit: int | None = None
 ) -> list[dict]:
-    """+filterItems(): flexible catalog filtering for UI."""
     sql = """
       SELECT a.artwork_id, a.vendor_id, a.category_id, a.title, a.itemDescription, a.pricePerWeek, a.imageLink,
              a.availabilityStartDate, a.availabilityEndDate, a.maxQuantity, a.availabilityStatus,
@@ -150,7 +150,7 @@ def get_vendor_items(vendor_id: int):
             a.pricePerWeek,
             a.imageLink AS image,
             a.availabilityStatus,
-            a.maxQuantity,              -
+            a.maxQuantity,              
             a.availabilityEndDate,      
             a.category_id,
             c.categoryName
@@ -164,129 +164,9 @@ def get_vendor_items(vendor_id: int):
     return rows
 
 
-
 # Auth
 def _hash(pw: str) -> str:
     return sha256(pw.encode()).hexdigest()
-
-def check_for_user(credential: str, password_plain: str) -> Optional[Tuple[str, dict]]:
-    pwd = _hash(password_plain)
-    cur = mysql.connection.cursor()
-
-    # Admin by username
-    cur.execute("""
-        SELECT admin_id AS id, username
-        FROM admins
-        WHERE username=%s AND admin_password=%s
-    """, (credential, pwd))
-    row = cur.fetchone()
-    if row:
-        cur.close()
-        return "admin", {"id": row["id"], "firstname": "Admin", "surname": row["username"],
-                         "email": None, "phone": None}
-
-    # Customer by email
-    cur.execute("""
-        SELECT customer_id AS id, email, phone, customer_password, firstName, lastName
-        FROM customers
-        WHERE email=%s AND customer_password=%s
-    """, (credential, pwd))
-    row = cur.fetchone()
-    if row:
-        cur.close()
-        return "customer", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
-                            "email": row["email"], "phone": row["phone"]}
-
-    # Vendor by email
-    cur.execute("""
-        SELECT vendor_id AS id, email, phone, vendor_password, firstName, lastName
-        FROM vendors
-        WHERE email=%s AND vendor_password=%s
-    """, (credential, pwd))
-    row = cur.fetchone()
-    cur.close()
-    if row:
-        return "vendor", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
-                          "email": row["email"], "phone": row["phone"]}
-    return None
-
-def check_for_user_with_role(credential: str, password_plain: str, role_hint: str | None = None) -> Optional[Tuple[str, dict]]:
-    """
-    Role-aware login. Admin is always checked first (by username), regardless of role_hint.
-    role_hint: 'customer' / 'vendor' / 'admin' / 'auto' (or None)
-    """
-    pwd = _hash(password_plain)
-    cur = mysql.connection.cursor()
-
-    # 1) Admin first, regardless of the selected radio
-    cur.execute("""
-        SELECT admin_id AS id, username
-        FROM admins
-        WHERE username=%s AND admin_password=%s
-    """, (credential, pwd))
-    row = cur.fetchone()
-    if row:
-        cur.close()
-        return "admin", {"id": row["id"], "firstname": "Admin", "surname": row["username"],
-                         "email": None, "phone": None}
-
-    # Normalize hint
-    hint = (role_hint or "auto").lower()
-
-    if hint == "admin":
-        # If user explicitly chose Admin and we didn't match above, stop here.
-        cur.close()
-        return None
-
-    if hint == "customer":
-        # Customer only
-        cur.execute("""
-            SELECT customer_id AS id, email, phone, firstName, lastName
-            FROM customers
-            WHERE email=%s AND customer_password=%s
-        """, (credential, pwd))
-        row = cur.fetchone(); cur.close()
-        if row:
-            return "customer", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
-                                "email": row["email"], "phone": row["phone"]}
-        return None
-
-    if hint == "vendor":
-        # Vendor only
-        cur.execute("""
-            SELECT vendor_id AS id, email, phone, firstName, lastName
-            FROM vendors
-            WHERE email=%s AND vendor_password=%s
-        """, (credential, pwd))
-        row = cur.fetchone(); cur.close()
-        if row:
-            return "vendor", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
-                              "email": row["email"], "phone": row["phone"]}
-        return None
-
-    # Auto: fall back to your existing order (customer / vendor)
-    cur.execute("""
-        SELECT customer_id AS id, email, phone, firstName, lastName
-        FROM customers
-        WHERE email=%s AND customer_password=%s
-    """, (credential, pwd))
-    row = cur.fetchone()
-    if row:
-        cur.close()
-        return "customer", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
-                            "email": row["email"], "phone": row["phone"]}
-
-    cur.execute("""
-        SELECT vendor_id AS id, email, phone, firstName, lastName
-        FROM vendors
-        WHERE email=%s AND vendor_password=%s
-    """, (credential, pwd))
-    row = cur.fetchone(); cur.close()
-    if row:
-        return "vendor", {"id": row["id"], "firstname": row["firstName"], "surname": row["lastName"],
-                          "email": row["email"], "phone": row["phone"]}
-    return None
-
 
 def check_for_user_with_hint(credential: str, password_plain: str, hint: str) -> Optional[Tuple[str, dict]]:
     """
@@ -343,52 +223,6 @@ def check_for_user_with_hint(credential: str, password_plain: str, hint: str) ->
     return None
 
 
-def add_customer(form):
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        INSERT INTO customers (email, phone, customer_password, firstName, lastName, address_id)
-        VALUES (%s, %s, %s, %s, %s, NULL)
-    """, (form.email.data, form.phone.data, _hash(form.password.data), form.firstname.data, form.surname.data))
-    mysql.connection.commit()
-    cur.close()
-
-
-def login(credential: str, password_plain: str):
-
-    return check_for_user(credential, password_plain)  
-
-def register(email: str, phone: str, password_plain: str, first: str, last: str, role: str = "customer") -> int:
-    cur = mysql.connection.cursor()
-    pw = _hash(password_plain)
-    if role == "vendor":
-        cur.execute("""
-            INSERT INTO vendors (email, phone, vendor_password, firstName, lastName, address_id,
-                         artisticName, bio, profilePictureLink)
-            VALUES (%s,%s,%s,%s,%s,NULL, %s, %s, %s)
-        """, (email, phone, pw, first, last,  '',  '',  ''))
-        new_id = cur.lastrowid
-    else:
-        cur.execute("""
-            INSERT INTO customers (email, phone, customer_password, firstName, lastName, address_id)
-            VALUES (%s,%s,%s,%s,%s,NULL)
-        """, (email, phone, pw, first, last))
-        new_id = cur.lastrowid
-    mysql.connection.commit(); cur.close()
-    return new_id
-
-
-def subscribe_to_newsletter(customer_id: int, subscribed: bool = True) -> None:
-    cur = mysql.connection.cursor()
-    cur.execute("UPDATE customers SET newsletterSubscription=%s WHERE customer_id=%s;", (1 if subscribed else 0, customer_id))
-    mysql.connection.commit(); cur.close()
-
-def deleteUser(role: str, user_id: int) -> None:
-    table = "customers" if role == "customer" else "vendors"
-    cur = mysql.connection.cursor()
-    cur.execute(f"DELETE FROM {table} WHERE {role}_id=%s;", (user_id,))
-    mysql.connection.commit(); cur.close()
-
-
 # Orders
 def add_order(order: Order):
     cur = mysql.connection.cursor()
@@ -400,7 +234,8 @@ def add_order(order: Order):
         order.orderStatus.value if hasattr(order.orderStatus, "value") else str(order.orderStatus),
         order.orderDate or datetime.now(),
         order.billingAddressID,
-        order.deliveryAddressID
+        order.deliveryAddressID,
+        
     ))
     order_id = cur.lastrowid
 
@@ -416,80 +251,6 @@ def add_order(order: Order):
 
     mysql.connection.commit()
     cur.close()
-
-def get_orders():
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT o.order_id, o.customer_id, o.orderStatus, o.orderDate,
-               o.billingAddressID, o.deliveryAddressID,
-               c.firstName, c.lastName, c.email, c.phone
-        FROM orders o
-        JOIN customers c ON c.customer_id = o.customer_id
-        ORDER BY o.orderDate DESC;
-    """)
-    rows = cur.fetchall()
-    cur.close()
-    results = []
-    for r in rows:
-        order = Order(
-            order_id=r['order_id'], customer_id=r['customer_id'],
-            orderStatus=OrderStatus(r['orderStatus']), orderDate=r['orderDate'],
-            billingAddressID=r['billingAddressID'], deliveryAddressID=r['deliveryAddressID'],
-            items=[]
-        )
-        results.append(order)
-    return results
-
-def view_orders(customer_id: int) -> list[dict]:
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT o.order_id, o.orderStatus, o.orderDate, o.billingAddressID, o.deliveryAddressID
-        FROM orders o
-        WHERE o.customer_id=%s
-        ORDER BY o.orderDate DESC
-    """, (customer_id,))
-    rows = cur.fetchall(); cur.close()
-    return rows
-
-def calculate_totals(order_id: int) -> str:
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT COALESCE(SUM(oi.unitPrice * oi.quantity * COALESCE(oi.rentalDuration,1)),0) AS total
-        FROM order_item oi WHERE oi.order_id=%s
-    """, (order_id,))
-    r = cur.fetchone(); cur.close()
-    return str(r["total"] or 0)
-
-def submit_order(cart_id: int, customer_id: int, billingAddressID: int | None, deliveryAddressID: int | None) -> int:
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        INSERT INTO orders (customer_id, orderStatus, orderDate, billingAddressID, deliveryAddressID)
-        VALUES (%s,'Pending', NOW(), %s, %s)
-    """, (customer_id, billingAddressID, deliveryAddressID))
-    order_id = cur.lastrowid
-    cur.execute("""
-    SELECT ci.artwork_id, ci.quantity, ci.rentalDuration, a.pricePerWeek
-    FROM cart_items ci
-    JOIN artworks a ON a.artwork_id = ci.artwork_id
-    WHERE ci.cart_id=%s
-    """, (cart_id,))
-    for r in cur.fetchall():
-        cur.execute("""
-           INSERT INTO order_item (order_id, artwork_id, quantity, rentalDuration, unitPrice)
-           VALUES (%s,%s,%s,%s,%s)
-        """, (order_id, r["artwork_id"], r["quantity"], r["rentalDuration"], r["pricePerWeek"]))
-
-    # Mark cart converted
-    cur.execute("UPDATE carts SET cart_status='Converted' WHERE cart_id=%s;", (cart_id,))
-    mysql.connection.commit(); cur.close()
-    return order_id
-
-def confirm_payment(order_id: int) -> None:
-    cur = mysql.connection.cursor()
-    cur.execute("UPDATE orders SET orderStatus='Confirmed' WHERE order_id=%s;", (order_id,))
-    mysql.connection.commit(); cur.close()
-
-
 
 
 def get_all_vendors(limit: Optional[int] = None) -> List[dict]:
@@ -508,7 +269,7 @@ def get_all_vendors(limit: Optional[int] = None) -> List[dict]:
     cur.close()
     return rows
 
-def get_latest_artworks(limit: Optional[int] = 12, category_id: Optional[int] = None) -> List[dict]:
+def get_latest_artworks(limit: Optional[int] = None, category_id: Optional[int] = None) -> List[dict]:
     cur = mysql.connection.cursor()
     sql = """
         SELECT artwork_id, vendor_id, category_id, title, itemDescription, pricePerWeek,
@@ -541,18 +302,6 @@ def delete_artwork(artwork_id: int, vendor_id: int) -> None:
     cur.execute("DELETE FROM artworks WHERE artwork_id=%s AND vendor_id=%s;", (artwork_id, vendor_id,))
     mysql.connection.commit(); cur.close()
 
-def update_artwork_details(artwork_id: int, patch: dict) -> None:
-    allowed = {"title","itemDescription","pricePerWeek","imageLink","availabilityStartDate","availabilityEndDate","maxQuantity","category_id"}
-    sets, params = [], []
-    for k, v in patch.items():
-        if k in allowed:
-            sets.append(f"{k}=%s"); params.append(v)
-    if not sets:
-        return
-    params.append(artwork_id)
-    cur = mysql.connection.cursor()
-    cur.execute(f"UPDATE artworks SET {', '.join(sets)} WHERE artwork_id=%s;", tuple(params))
-    mysql.connection.commit(); cur.close()
 
 def archive_artwork(artwork_id: int) -> None:
     cur = mysql.connection.cursor()
@@ -594,16 +343,9 @@ def generate_kpi(vendor_id: int) -> dict:
         "inventory_active": int(inv.get("activeItems") or 0),
         "orders_count":     int(sales.get("ordersCnt") or 0),
         "items_leased":     int(sales.get("itemsLeased") or 0),
-        "customers_count":  int(sales.get("customersCnt") or 0),   # 👈 NEW
+        "customers_count":  int(sales.get("customersCnt") or 0),  
         "revenue":          Decimal(str(sales.get("revenue") or 0))
     }
-
-
-def select_default_address(customer_id: int, address_id: int) -> None:
-    cur = mysql.connection.cursor()
-    cur.execute("UPDATE customers SET address_id=%s WHERE customer_id=%s;", (address_id, customer_id))
-    mysql.connection.commit(); cur.close()
-
 
 
 def ensure_address(
@@ -642,10 +384,6 @@ def ensure_address(
     addr_id = cur.lastrowid
     cur.close()
     return addr_id
-
-def insert_address(streetNumber: str, streetName: str, city: str, state: str, postcode: str, country: str) -> int:
-    # Backward-compatible
-    return ensure_address(streetNumber, streetName, city, state, postcode, country)
 
 
 def register_account(form) -> int:
@@ -696,27 +434,11 @@ def register_account(form) -> int:
     cur.close()
     return new_id
 
-def ensure_customer(email: str, phone: str, first: str, last: str) -> int:
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT customer_id FROM customers WHERE email=%s LIMIT 1;", (email,))
-    row = cur.fetchone()
-    if row:
-        cur.close()
-        return int(row["customer_id"])
-
-    cur.execute("""
-        INSERT INTO customers (email, phone, customer_password, firstName, lastName, address_id)
-        VALUES (%s,%s,%s,%s,%s,NULL)
-    """, (email, phone, _hash(uuid4().hex[:12]), first, last))
-    new_id = cur.lastrowid
-    mysql.connection.commit()
-    cur.close()
-    return new_id
 
 def email_phone_in_use(role: str, email: str, phone: str) -> Tuple[bool, bool]:
     """
     Return (email_exists, phone_exists) for the target table only.
-    role: 'customer' | 'vendor'
+    role: 'customer' / 'vendor'
     """
     email = (email or "").strip()
     phone = (phone or "").strip()
@@ -736,8 +458,223 @@ def email_phone_in_use(role: str, email: str, phone: str) -> Tuple[bool, bool]:
     cur.close()
     return email_exists, phone_exists
 
-def arrange_delivery():
-    pass
 
-def edit_order():
-    pass
+
+def get_listed_artworks_for_category_with_details(category_id: int) -> List[dict]:
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT
+            a.artwork_id,
+            a.title,
+            a.itemDescription,
+            a.pricePerWeek,
+            a.vendor_id,
+            a.category_id,
+            a.availabilityStatus,
+            a.imageLink AS image,         
+            v.artisticName AS artisticName,
+            c.categoryName
+        FROM artworks a
+        LEFT JOIN vendors    v ON v.vendor_id   = a.vendor_id
+        LEFT JOIN categories c ON c.category_id = a.category_id
+        WHERE a.category_id = %s
+          AND a.availabilityStatus = 'Listed'
+        ORDER BY a.artwork_id DESC
+    """, (category_id,))
+    items = cur.fetchall()
+    cur.close()
+    return items
+
+def get_customer_postcode(customer_id: int) -> Optional[str]:
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT a.postcode
+        FROM customers c
+        LEFT JOIN addresses a ON a.address_id = c.address_id
+        WHERE c.customer_id = %s
+        LIMIT 1
+    """, (int(customer_id),))
+    row = cur.fetchone()
+    cur.close()
+    if row:
+        return row.get('postcode')
+    return None
+
+def get_customer_address_details(customer_id: int) -> Optional[dict]:
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT a.streetNumber, a.streetName, a.city, a.state, a.postcode, a.country
+          FROM customers c
+          LEFT JOIN addresses a ON a.address_id = c.address_id
+         WHERE c.customer_id = %s
+         LIMIT 1
+    """, (customer_id,))
+    row = cur.fetchone()
+    cur.close()
+    return row
+
+def get_artworks_for_vendor_gallery(vendor_id: int) -> List[dict]:
+  
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT a.*, c.categoryName
+          FROM artworks a
+          LEFT JOIN categories c ON c.category_id = a.category_id
+         WHERE a.vendor_id = %s
+         ORDER BY
+           CASE a.availabilityStatus
+             WHEN 'Listed' THEN 0
+             WHEN 'Leased' THEN 1
+             ELSE 2
+           END,
+           a.artwork_id DESC
+    """, (vendor_id,))
+    items = cur.fetchall()
+    cur.close()
+    return items
+
+def add_artwork_from_form(form: ArtworkForm) -> None:
+    
+    category_id = form.category_id.data if form.category_id.data != 0 else None
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        INSERT INTO artworks (
+            vendor_id, category_id, title, itemDescription, pricePerWeek,
+            imageLink, availabilityStartDate, availabilityEndDate,
+            maxQuantity, availabilityStatus
+        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (
+        form.vendor_id.data, category_id, form.title.data, form.itemDescription.data,
+        str(form.pricePerWeek.data), form.imageLink.data,
+        form.availabilityStartDate.data, form.availabilityEndDate.data,
+        form.maxQuantity.data, form.availabilityStatus.data
+    ))
+    mysql.connection.commit()
+    cur.close()
+
+def admin_get_orders(order_id: Optional[int] = None) -> List[dict]:
+    
+    where = "WHERE o.order_id=%s" if order_id else ""
+    params = (order_id,) if order_id else ()
+    
+    cur = mysql.connection.cursor()
+    cur.execute(f"""
+        SELECT o.order_id, o.customer_id, o.orderStatus, o.orderDate,
+               o.billingAddressID, o.deliveryAddressID,
+               c.firstName, c.lastName, c.email, c.phone
+          FROM orders o
+          LEFT JOIN customers c ON c.customer_id = o.customer_id
+          {where}
+         ORDER BY o.orderDate DESC, o.order_id DESC
+    """, params)
+    orders = cur.fetchall()
+    cur.close()
+    return orders
+
+def admin_get_order_items(order_id: Optional[int] = None) -> List[dict]:
+    
+    where_items = "WHERE oi.order_id=%s" if order_id else ""
+    params = (order_id,) if order_id else ()
+
+    cur = mysql.connection.cursor()
+    cur.execute(f"""
+        SELECT
+          oi.orderItem_id AS order_item_id,   
+          oi.order_id,
+          oi.artwork_id,
+          oi.quantity,
+          oi.rentalDuration,
+          oi.unitPrice,
+          a.title AS artworkTitle
+        FROM order_item oi
+        LEFT JOIN artworks a ON a.artwork_id = oi.artwork_id
+        {where_items}
+        ORDER BY oi.order_id DESC, oi.orderItem_id ASC
+    """, params)
+    order_items = cur.fetchall()
+    cur.close()
+    return order_items
+
+def admin_get_order_statuses() -> List[str]:
+    
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT DISTINCT orderStatus FROM orders ORDER BY orderStatus")
+    statuses = [r['orderStatus'] for r in cur.fetchall()]
+    cur.close()
+    return statuses
+
+def admin_update_order(order_id: int, cols: dict) -> None:
+    
+    sets, params = [], []
+    for k, v in cols.items():
+        if v is not None and v != '':
+            sets.append(f"{k}=%s")
+            params.append(v)
+    if sets:
+        params.append(order_id)
+        cur = mysql.connection.cursor()
+        cur.execute(f"UPDATE orders SET {', '.join(sets)} WHERE order_id=%s", tuple(params))
+        mysql.connection.commit()
+        cur.close()
+
+def admin_update_order_item(order_item_id: int, cols: dict) -> None:
+    
+    sets, params = [], []
+    for k, v in cols.items():
+        if v is not None and v != '':
+            sets.append(f"{k}=%s")
+            params.append(v)
+    if sets:
+        params.append(order_item_id)
+        cur = mysql.connection.cursor()
+        cur.execute(f"UPDATE order_item SET {', '.join(sets)} WHERE orderItem_id=%s", tuple(params))
+        mysql.connection.commit()
+        cur.close()
+
+def get_vendor_artwork(artwork_id: int, vendor_id: int) -> Optional[dict]:
+    
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT artwork_id, vendor_id, category_id, title, itemDescription, pricePerWeek,
+               imageLink, availabilityStartDate, availabilityEndDate, maxQuantity, availabilityStatus
+        FROM artworks
+        WHERE artwork_id=%s AND vendor_id=%s
+        LIMIT 1
+    """, (artwork_id, vendor_id))
+    row = cur.fetchone()
+    cur.close()
+    return row
+
+def update_artwork_from_form(form: ArtworkForm, artwork_id: int, vendor_id: int) -> None:
+    
+    category_id = form.category_id.data if form.category_id.data != 0 else None
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        UPDATE artworks
+           SET category_id=%s,
+               title=%s,
+               itemDescription=%s,
+               pricePerWeek=%s,
+               imageLink=%s,
+               availabilityStartDate=%s,
+               availabilityEndDate=%s,
+               maxQuantity=%s,
+               availabilityStatus=%s
+         WHERE artwork_id=%s AND vendor_id=%s
+    """, (
+        category_id,
+        form.title.data,
+        form.itemDescription.data,
+        str(form.pricePerWeek.data),
+        form.imageLink.data,
+        form.availabilityStartDate.data,
+        form.availabilityEndDate.data,
+        form.maxQuantity.data,
+        form.availabilityStatus.data,
+        artwork_id, vendor_id
+    ))
+    mysql.connection.commit()
+    cur.close()

@@ -166,5 +166,5 @@ INSERT INTO orders (order_id, customer_id, orderStatus, orderDate, billingAddres
 VALUES (3, 1, 'Confirmed', '2025-08-15 14:30:00', 3, 3);
 
 INSERT INTO order_item (orderItem_id, order_id, artwork_id, quantity, rentalDuration, unitPrice)
-VALUES (3, 3, 13, 1, 1, 15.00);    -- purchase (treated as 1 period for consistency)
+VALUES (3, 3, 13, 1, 1, 15.00);    
 

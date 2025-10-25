@@ -7,17 +7,35 @@ from flask import (
 
 from project.db import (
     get_categories, get_category, get_artwork,
-    get_orders, get_vendor, get_vendor_items, get_all_vendors,delete_artwork,
-    filter_items, generate_kpi, publish_artwork, mysql
+    get_vendor, get_vendor_items, get_all_vendors, delete_artwork,
+    filter_items, generate_kpi, publish_artwork, mysql,
+    get_listed_artworks_for_category_with_details,
+    get_customer_postcode,
+    get_customer_address_details,
+    get_artworks_for_vendor_gallery,
+    add_artwork_from_form,
+    admin_get_orders,
+    admin_get_order_items,
+    admin_get_order_statuses,
+    admin_update_order,
+    admin_update_order_item,
+    get_vendor_artwork,
+    update_artwork_from_form,
+    email_phone_in_use,
+    register_account,
+    check_for_user_with_hint,
+    add_order, 
+    ensure_address
 )
 
 from project.session import (
     add_to_cart, empty_cart, remove_from_cart,
-    update_cart_item
+    update_cart_item, get_cart, delivery_cost_from_session,
+    convert_cart_to_order
 )
 
 from project.forms import (
-    AddToCartForm, ArtworkForm, LoginForm
+    AddToCartForm, ArtworkForm, LoginForm, CheckoutForm, RegisterForm
 )
 
 from project.wrappers import (
@@ -58,7 +76,7 @@ def index():
         q=q,
         availability='Listed',
         sort=sort,
-        limit=None if has_active_filters else 12
+        limit=None 
     )
 
     vendors = get_all_vendors(limit=12)
@@ -82,44 +100,19 @@ def index():
 # Category listing
 @bp.route('/category/<int:category_id>/')
 def category_items(category_id):
-    from flask import render_template, abort
-    from project.db import mysql
-
-    cur = mysql.connection.cursor()
-
-    cur.execute(
-        "SELECT category_id, categoryName FROM categories WHERE category_id=%s LIMIT 1",
-        (category_id,),
-    )
-    category = cur.fetchone()
-    if not category:
-        cur.close()
+    category_obj = get_category(category_id)
+    if not category_obj:
         abort(404)
+    
+    # Use the dict-like category from get_category
+    category_dict = {
+        'category_id': category_obj.category_id,
+        'categoryName': category_obj.categoryName
+    }
 
-    #Explicit columns,the image column to `image`
-    cur.execute("""
-        SELECT
-            a.artwork_id,
-            a.title,
-            a.itemDescription,
-            a.pricePerWeek,
-            a.vendor_id,
-            a.category_id,
-            a.availabilityStatus,
-            a.imageLink AS image,         
-            v.artisticName AS artisticName,
-            c.categoryName
-        FROM artworks a
-        LEFT JOIN vendors    v ON v.vendor_id   = a.vendor_id
-        LEFT JOIN categories c ON c.category_id = a.category_id
-        WHERE a.category_id = %s
-          AND a.availabilityStatus = 'Listed'
-        ORDER BY a.artwork_id DESC
-    """, (category_id,))
-    items = cur.fetchall()
-    cur.close()
+    items = get_listed_artworks_for_category_with_details(category_id)
 
-    return render_template('category_items.html', category=category, items=items)
+    return render_template('category_items.html', category=category_dict, items=items)
 
 
 # Item details (with AddToCart)
@@ -129,23 +122,14 @@ def item_details(artwork_id):
     if not item:
         flash("Item not found", "warning")
         return redirect(url_for('main.index'))
+    
     vendor = get_vendor(item.vendor_id)
     category = get_category(item.category_id) if item.category_id else None
+    
     default_postcode = None
     u = session.get('user') or {}
     if u.get('role') == 'customer' and u.get('id'):
-        cur = mysql.connection.cursor()
-        cur.execute("""
-            SELECT a.postcode
-            FROM customers c
-            LEFT JOIN addresses a ON a.address_id = c.address_id
-            WHERE c.customer_id = %s
-            LIMIT 1
-        """, (int(u['id']),))
-        row = cur.fetchone()
-        cur.close()
-        if row:
-            default_postcode = row.get('postcode')
+        default_postcode = get_customer_postcode(int(u['id']))
 
     form = AddToCartForm()
     if request.method == 'GET' and default_postcode and not form.postcode.data:
@@ -187,29 +171,11 @@ def item_details(artwork_id):
 #  Vendor gallery (public profile + items)
 @bp.route('/vendor/<int:vendor_id>/')
 def vendor_gallery(vendor_id):
-    from flask import render_template, abort
-    from project.db import mysql, get_vendor
-
     vendor = get_vendor(vendor_id)
     if not vendor:
         abort(404)
 
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT a.*, c.categoryName
-          FROM artworks a
-          LEFT JOIN categories c ON c.category_id = a.category_id
-         WHERE a.vendor_id = %s
-         ORDER BY
-           CASE a.availabilityStatus
-             WHEN 'Listed' THEN 0
-             WHEN 'Leased' THEN 1
-             ELSE 2
-           END,
-           a.artwork_id DESC
-    """, (vendor_id,))
-    items = cur.fetchall()
-    cur.close()
+    items = get_artworks_for_vendor_gallery(vendor_id)
 
     return render_template('vendor_gallery.html', vendor=vendor, items=items)
 
@@ -239,22 +205,7 @@ def vendor_manage():
     form.category_id.choices = [(c.category_id, c.categoryName) for c in categories]
 
     if request.method == 'POST' and form.validate_on_submit():
-        category_id = form.category_id.data if form.category_id.data != 0 else None
-        cur = mysql.connection.cursor()
-        cur.execute("""
-            INSERT INTO artworks (
-                vendor_id, category_id, title, itemDescription, pricePerWeek,
-                imageLink, availabilityStartDate, availabilityEndDate,
-                maxQuantity, availabilityStatus
-            ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (
-            form.vendor_id.data, category_id, form.title.data, form.itemDescription.data,
-            str(form.pricePerWeek.data), form.imageLink.data,
-            form.availabilityStartDate.data, form.availabilityEndDate.data,
-            form.maxQuantity.data, form.availabilityStatus.data
-        ))
-        mysql.connection.commit()
-        cur.close()
+        add_artwork_from_form(form)
         flash('Artwork published.')
         return redirect(url_for('main.vendor_manage'))
 
@@ -281,10 +232,6 @@ def vendor_manage():
 @bp.route('/cart/', methods=['GET'])
 @only_guests_or_customers
 def cart():
-    from flask import render_template, session
-    from project.session import get_cart, delivery_cost_from_session
-    from project.db import mysql
-
     c = get_cart()
 
     # If no postcode stored yet, and a customer is logged in, pull it from DB
@@ -298,18 +245,9 @@ def cart():
             cust_id = None
 
         if is_customer and cust_id:
-            cur = mysql.connection.cursor()
-            cur.execute("""
-                SELECT a.postcode
-                  FROM customers c
-             LEFT JOIN addresses a ON a.address_id = c.address_id
-                 WHERE c.customer_id = %s
-                 LIMIT 1
-            """, (cust_id,))
-            row = cur.fetchone()
-            cur.close()
-            if row and row.get('postcode'):
-                session['checkout_postcode'] = str(row['postcode'])
+            postcode = get_customer_postcode(cust_id)
+            if postcode:
+                session['checkout_postcode'] = str(postcode)
 
     # Compute delivery using the same logic everywhere (reads session['checkout_postcode'])
     delivery_cost = delivery_cost_from_session()
@@ -321,9 +259,6 @@ def cart():
 @bp.post('/cart/add/<int:artwork_id>/')
 @only_guests_or_customers
 def cart_add(artwork_id):
-    from flask import request, session, redirect, url_for
-    from project.session import add_to_cart   
-
     qty   = request.form.get('quantity', type=int) or 1
     weeks = request.form.get('weeks', type=int) or 1
     pc    = (request.form.get('postcode') or '').strip()
@@ -391,17 +326,12 @@ def cart_remove(item_id):
 @bp.route('/checkout/', methods=['GET', 'POST'])
 @only_guests_or_customers
 def checkout():
-    from flask import render_template, request, session, flash, redirect, url_for
-    from project.forms import CheckoutForm
-    from project.session import get_cart, empty_cart, convert_cart_to_order
-    from project.db import add_order, ensure_address, mysql, get_artwork
-
     form = CheckoutForm()
     cart = get_cart()
 
     # Helpers
     def _get_customer_id(u: dict | None):
-        """Find a customer id regardless of key naming."""
+        #Find a customer id regardless of key naming.
         u = u or {}
         for k in ('id', 'customer_id', 'customerID', 'customerId'):
             v = u.get(k)
@@ -413,7 +343,7 @@ def checkout():
         return None
 
     def _from_user(u: dict, *keys):
-        """Pick the first non-empty value for common contact key variants."""
+        #Pick the first non-empty value for common contact key variants.
         for k in keys:
             v = u.get(k)
             if v:
@@ -476,7 +406,8 @@ def checkout():
                 flash('Please register as a customer to place your order. We saved your details.', 'info')
                 return redirect(url_for('main.register', next='checkout'))
 
-            # Billing must be present (customer still must complete these)
+            
+            """
             billing_required = [
                 form.bill_streetNumber.data, form.bill_streetName.data,
                 form.bill_city.data, form.bill_state.data,
@@ -484,7 +415,9 @@ def checkout():
             ]
             if not all((v or '').strip() for v in billing_required):
                 flash('Please provide your billing address or click "Same as delivery".', 'error')
-                return render_template('checkout.html', form=form, cart=cart)
+                
+            return render_template('checkout.html', form=form, cart=cart)
+            """
 
             # Ensure only Listed items can be checked out
             bad = []
@@ -530,7 +463,7 @@ def checkout():
                 order.customer_id = cust_id
             order.deliveryAddressID = deliv_id
             order.billingAddressID  = bill_id
-
+            """
             payment_method = (form.payment_method.data or 'card').lower()
             payment_details = {}
             if payment_method == 'card':
@@ -551,7 +484,7 @@ def checkout():
                 }
             order.paymentMethod = payment_method
             order.paymentDetails = payment_details
-
+            """
             add_order(order)
             empty_cart()
             session.pop('checkout_prefill', None)
@@ -581,16 +514,7 @@ def checkout():
         is_customer = (u.get('role') == 'customer' or u.get('type') == 'customer')
         if is_customer and cust_id:
             try:
-                cur = mysql.connection.cursor()
-                cur.execute("""
-                    SELECT a.streetNumber, a.streetName, a.city, a.state, a.postcode, a.country
-                      FROM customers c
-                      LEFT JOIN addresses a ON a.address_id = c.address_id
-                     WHERE c.customer_id = %s
-                     LIMIT 1
-                """, (cust_id,))
-                row = cur.fetchone()
-                cur.close()
+                row = get_customer_address_details(cust_id)
                 if row:
                     form.del_streetNumber.data = row.get('streetNumber') or ''
                     form.del_streetName.data   = row.get('streetName')   or ''
@@ -640,10 +564,6 @@ def checkout():
 @bp.route('/register/', methods=['GET', 'POST'])
 @only_guests
 def register():
-    from flask import render_template, request, session, flash, redirect, url_for
-    from project.forms import RegisterForm
-    from project.db import register_account, mysql
-
     form = RegisterForm()
 
     # Keep the toggle working 
@@ -678,18 +598,12 @@ def register():
         role = (form.account_type.data or 'customer').lower()
         if role not in ('customer', 'vendor'):
             role = 'customer'
-        table = 'customers' if role == 'customer' else 'vendors'
 
         # Pre-check uniqueness in the selected table
         email = (form.email.data or '').strip()
         phone = (form.phone.data or '').strip()
 
-        cur = mysql.connection.cursor()
-        cur.execute(f"SELECT 1 FROM {table} WHERE email=%s LIMIT 1", (email,))
-        email_exists = cur.fetchone() is not None
-        cur.execute(f"SELECT 1 FROM {table} WHERE phone=%s LIMIT 1", (phone,))
-        phone_exists = cur.fetchone() is not None
-        cur.close()
+        email_exists, phone_exists = email_phone_in_use(role, email, phone)
 
         had_error = False
         if email_exists:
@@ -731,7 +645,6 @@ def register():
 @bp.route('/login/', methods=['GET', 'POST'])
 @only_guests
 def login():
-    from project.db import check_for_user_with_hint
     form = LoginForm()
     if request.method == 'POST' and form.validate_on_submit():
         role_hint = form.account_type.data or "customer"  # 'customer' or 'vendor'
@@ -752,6 +665,11 @@ def login():
         }
         session['logged_in'] = True
         flash('Login successful!')
+        
+        # Redirect back to checkout if that's where they came from
+        next_url = session.pop('next_after_register', None)
+        if next_url:
+            return redirect(next_url)
         return redirect(url_for('main.index'))
     return render_template('login.html', form=form)
 
@@ -762,6 +680,8 @@ def logout():
     session.pop('user', None)
     session.pop('logged_in', None)
     session.pop('checkout_postcode', None)
+    session.pop('checkout_prefill', None) # Clear prefill on logout
+    session.pop('next_after_register', None) # Clear redirect hint
     empty_cart()
     flash('You have been logged out.')
     return redirect(url_for('main.index'))
@@ -770,53 +690,18 @@ def logout():
 @bp.route('/manage/', methods=['GET'])
 @only_admins
 def manage():
-    """Admin: list all orders and order items; optional ?order_id= filter."""
+    #Admin: list all orders and order items
     oid = request.args.get('order_id', type=int)
 
-    where = "WHERE o.order_id=%s" if oid else ""
-    params = (oid,) if oid else ()
+    orders = admin_get_orders(oid)
+    order_items = admin_get_order_items(oid)
 
-    cur = mysql.connection.cursor()
-
-    # Orders + customer info
-    cur.execute(f"""
-        SELECT o.order_id, o.customer_id, o.orderStatus, o.orderDate,
-               o.billingAddressID, o.deliveryAddressID,
-               c.firstName, c.lastName, c.email, c.phone
-          FROM orders o
-          LEFT JOIN customers c ON c.customer_id = o.customer_id
-          {where}
-         ORDER BY o.orderDate DESC, o.order_id DESC
-    """, params)
-    orders = cur.fetchall()
-
-    # Order items (⚠ uses real PK name orderItem_id, but ALIASED for template)
-    where_items = "WHERE oi.order_id=%s" if oid else ""
-    cur.execute(f"""
-        SELECT
-          oi.orderItem_id AS order_item_id,   -- alias for template
-          oi.order_id,
-          oi.artwork_id,
-          oi.quantity,
-          oi.rentalDuration,
-          oi.unitPrice,
-          a.title AS artworkTitle
-        FROM order_item oi
-        LEFT JOIN artworks a ON a.artwork_id = oi.artwork_id
-        {where_items}
-        ORDER BY oi.order_id DESC, oi.orderItem_id ASC
-    """, params)
-    order_items = cur.fetchall()
-
-    # Status choices (prefer Enum; fallback to distinct values)
+    # Status choices
     try:
         from project.models import OrderStatus
         statuses = [s.value for s in OrderStatus]
     except Exception:
-        cur.execute("SELECT DISTINCT orderStatus FROM orders ORDER BY orderStatus")
-        statuses = [r['orderStatus'] for r in cur.fetchall()]
-
-    cur.close()
+        statuses = admin_get_order_statuses()
 
     return render_template(
         'manage.html',
@@ -830,12 +715,9 @@ def manage():
 @bp.route('/manage/update/', methods=['POST'])
 @only_admins
 def manage_update():
-    """
-    Admin updater for 'orders' and 'order_item'.
-    Each row posts a tiny form with hidden 'entity' + PK.
-    """
+    # Admin updater for 'orders' and 'order_item'.
+    
     entity = (request.form.get('entity') or '').strip()
-    cur = mysql.connection.cursor()
 
     if entity == 'order':
         order_id = request.form.get('order_id', type=int)
@@ -847,15 +729,7 @@ def manage_update():
             'billingAddressID':  request.form.get('billingAddressID', type=int),
             'deliveryAddressID': request.form.get('deliveryAddressID', type=int),
         }
-        sets, params = [], []
-        for k, v in cols.items():
-            if v is not None and v != '':
-                sets.append(f"{k}=%s")
-                params.append(v)
-        if sets:
-            params.append(order_id)
-            cur.execute(f"UPDATE orders SET {', '.join(sets)} WHERE o.order_id=%s".replace("o.", ""), tuple(params))
-            mysql.connection.commit()
+        admin_update_order(order_id, cols)
         flash(f"Order {order_id} updated.", "success")
 
     elif entity == 'order_item':
@@ -868,24 +742,12 @@ def manage_update():
             'rentalDuration': request.form.get('rentalDuration', type=int),
             'unitPrice':      request.form.get('unitPrice') or None,  # let MySQL cast
         }
-        sets, params = [], []
-        for k, v in cols.items():
-            if v is not None and v != '':
-                sets.append(f"{k}=%s")
-                params.append(v)
-        if sets:
-            params.append(oi_id)
-            # ⚠ real PK in schema is orderItem_id (camelCase)
-            cur.execute(f"UPDATE order_item SET {', '.join(sets)} WHERE orderItem_id=%s", tuple(params))
-            mysql.connection.commit()
+        admin_update_order_item(oi_id, cols)
         flash(f"Order item {oi_id} updated.", "success")
 
     else:
         flash("Unknown entity.", "warning")
 
-    cur.close()
-
-    # Keep current filter (?order_id=) after update
     return redirect(url_for('main.manage', order_id=request.form.get('persist_order_filter', type=int)))
 
 
@@ -904,6 +766,7 @@ def vendor_delete_artwork(artwork_id):
     vendor_id = int(user.get('id'))
     delete_artwork(artwork_id, vendor_id)
     flash('Artwork deleted.', 'success')
+    # If artwork is in order_item table it wont delete and render a error 500 on purpose
     return redirect(url_for('main.vendor_manage'))
 
 
@@ -914,17 +777,8 @@ def vendor_edit_artwork(artwork_id):
     vendor_id = int(user.get('id'))
 
     # Load the artwork and ensure it belongs to this vendor
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT artwork_id, vendor_id, category_id, title, itemDescription, pricePerWeek,
-               imageLink, availabilityStartDate, availabilityEndDate, maxQuantity, availabilityStatus
-        FROM artworks
-        WHERE artwork_id=%s AND vendor_id=%s
-        LIMIT 1
-    """, (artwork_id, vendor_id))
-    row = cur.fetchone()
+    row = get_vendor_artwork(artwork_id, vendor_id)
     if not row:
-        cur.close()
         abort(404)
 
     # Build form + choices
@@ -945,41 +799,12 @@ def vendor_edit_artwork(artwork_id):
         form.availabilityEndDate.data   = row['availabilityEndDate']
         form.maxQuantity.data         = row['maxQuantity']
         form.availabilityStatus.data  = row['availabilityStatus'] or 'Unlisted'
-        cur.close()
         return render_template('edit_artwork.html', form=form, artwork=row, categories=cats)
 
     # POST
     if form.validate_on_submit():
-        category_id = form.category_id.data if form.category_id.data != 0 else None
-        cur.execute("""
-            UPDATE artworks
-               SET category_id=%s,
-                   title=%s,
-                   itemDescription=%s,
-                   pricePerWeek=%s,
-                   imageLink=%s,
-                   availabilityStartDate=%s,
-                   availabilityEndDate=%s,
-                   maxQuantity=%s,
-                   availabilityStatus=%s
-             WHERE artwork_id=%s AND vendor_id=%s
-        """, (
-            category_id,
-            form.title.data,
-            form.itemDescription.data,
-            str(form.pricePerWeek.data),
-            form.imageLink.data,
-            form.availabilityStartDate.data,
-            form.availabilityEndDate.data,
-            form.maxQuantity.data,
-            form.availabilityStatus.data,
-            artwork_id, vendor_id
-        ))
-        mysql.connection.commit()
-        cur.close()
+        update_artwork_from_form(form, artwork_id, vendor_id)
         flash('Artwork updated!', 'success')
         return redirect(url_for('main.vendor_manage'))
 
-    cur.close()
     return render_template('edit_artwork.html', form=form, artwork=row, categories=cats)
-

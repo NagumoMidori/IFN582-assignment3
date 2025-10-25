@@ -22,12 +22,6 @@ class OrderStatus(str, Enum):
     CANCELLED = "Cancelled"
 
 @dataclass
-class Admin:
-    admin_id: Optional[int]
-    username: str
-    admin_password: str
-
-@dataclass
 class Address:
     address_id: Optional[int]
     streetNumber: str
@@ -83,26 +77,6 @@ class Artwork:
     vendor: Optional[Vendor] = None
     category: Optional[Category] = None
 
-    def is_available_on(self, d: date) -> bool:
-        pass
-    
-    def checkAvailability(self, start_date: date, weeks: int, qty: int = 1) -> bool:
-        pass
-    def calculateCustomPrice(self, qty: int, weeks: int, discount: Decimal | float = 0) -> Decimal:
-        base = Decimal(str(self.pricePerWeek)) * Decimal(qty) * Decimal(weeks)
-        if discount:
-            base = base * (Decimal("1.00") - Decimal(str(discount)))
-        return base.quantize(Decimal("0.01"))
-
-    def getArtworkDetails(self) -> dict:
-        return {
-            "artwork_id": self.artwork_id,
-            "title": self.title,
-            "pricePerWeek": str(self.pricePerWeek),
-            "availability": self.availabilityStatus.value,
-            "maxQuantity": self.maxQuantity,
-        }
-
 
 @dataclass
 class Cart:
@@ -116,7 +90,6 @@ class Cart:
     items: List["CartItem"] = field(default_factory=list)
 
     def total_using_current_prices(self) -> Decimal:
-    # local import avoids circulars; correct package path
         try:
             from project.session import delivery_cost_from_session
             delivery = delivery_cost_from_session()
@@ -167,9 +140,6 @@ class Order:
             total += li.line_total()
         return total.quantize(Decimal("0.01"))
     
-    def calculateTotals(self) -> Decimal:
-        return self.total()
-
 @dataclass
 class OrderItem:
     orderItem_id: Optional[int]
@@ -185,6 +155,3 @@ class OrderItem:
         if self.unitPrice is None:
             return Decimal("0.00")
         return (Decimal(str(self.unitPrice)) * (self.quantity or 1) * (self.rentalDuration or 1)).quantize(Decimal("0.01"))
-    
-    def calculateLineTotal(self) -> Decimal:
-        return self.line_total()

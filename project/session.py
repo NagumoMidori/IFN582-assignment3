@@ -114,7 +114,7 @@ def convert_cart_to_order(cart: Cart) -> Order:
         ))
     return order
 def _delivery_cost_for_postcode(value) -> Decimal:
-    """Return delivery cost as Decimal based on AU postcode bands."""
+    #Return delivery cost as Decimal based on AU postcode bands.
     try:
         pc = int(str(value).strip())
     except Exception:
@@ -132,5 +132,5 @@ def _delivery_cost_for_postcode(value) -> Decimal:
     else:                     return Decimal("150")
 
 def delivery_cost_from_session() -> Decimal:
-    """Reads the user's chosen/remembered postcode and returns the cost."""
+    #Reads the user's chosen/remembered postcode and returns the cost.
     return _delivery_cost_for_postcode(session.get("checkout_postcode"))
