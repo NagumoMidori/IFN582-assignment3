@@ -1,11 +1,12 @@
 from hashlib import sha256
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Optional, Tuple, List, Dict
 from uuid import uuid4
 from . import mysql
 from project.models import Category, Artwork, Vendor, Order, OrderStatus
 from project.forms import ArtworkForm
+
 
 
 # Catalog
@@ -678,3 +679,68 @@ def update_artwork_from_form(form: ArtworkForm, artwork_id: int, vendor_id: int)
     ))
     mysql.connection.commit()
     cur.close()
+
+def _get_artwork_constraints(artwork_id: int) -> Optional[dict]:
+    """Fetch maxQuantity + availability window + status for a single artwork."""
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT maxQuantity, availabilityStartDate, availabilityEndDate, availabilityStatus
+          FROM artworks
+         WHERE artwork_id = %s
+         LIMIT 1
+    """, (artwork_id,))
+    row = cur.fetchone()
+    cur.close()
+    return row or None
+
+def quantity_within_max(artwork_id: int, requested_qty: int) -> Tuple[bool, int]:
+    """
+    True if requested_qty <= maxQuantity for the artwork.
+    Returns (ok, maxQuantity).
+    """
+    info = _get_artwork_constraints(artwork_id)
+    if not info:
+        return (False, 0)
+    max_q = int(info.get("maxQuantity") or 0)
+    return (requested_qty <= max_q, max_q)
+
+def weeks_within_availability(artwork_id: int, weeks: int, start: Optional[date] = None) -> Tuple[bool, date, Optional[date]]:
+    """
+    True if (start or today) + weeks <= availabilityEndDate.
+    Returns (ok, start_date_used, availabilityEndDate).
+    If availabilityEndDate is NULL, we treat it as 'no upper limit' => ok=True.
+    """
+    info = _get_artwork_constraints(artwork_id)
+    if not info:
+        return (False, start or date.today(), None)
+
+    start_date = start or date.today()
+    end_limit = info.get("availabilityEndDate")  # may be None
+    if end_limit is None:
+        return (True, start_date, None)
+
+    # compute the date the rental would end
+    end_date = start_date + timedelta(weeks=max(1, int(weeks or 1)))
+    return (end_date <= end_limit, start_date, end_limit)
+
+def can_fulfill_request(artwork_id: int, qty: int, weeks: int) -> Tuple[bool, str]:
+    """
+    Combined guard: the artwork must be Listed, qty <= max, and duration within availabilityEndDate.
+    Returns (ok, human_message_if_not_ok).
+    """
+    info = _get_artwork_constraints(artwork_id)
+    if not info:
+        return (False, "This item no longer exists.")
+    if (info.get("availabilityStatus") or "").lower() != "listed":
+        return (False, "This item is not currently listed.")
+
+    ok_qty, max_q = quantity_within_max(artwork_id, int(qty or 1))
+    if not ok_qty:
+        return (False, f"Only {max_q} available for this item.")
+
+    ok_weeks, start_used, end_limit = weeks_within_availability(artwork_id, int(weeks or 1))
+    if not ok_weeks:
+        # end_limit may be None, but if we got here it's not
+        return (False, f"Selected duration exceeds availability (available until {end_limit:%Y-%m-%d}).")
+
+    return (True, "")

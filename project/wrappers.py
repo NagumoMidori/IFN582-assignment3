@@ -54,3 +54,17 @@ def only_guests(func):
             return redirect(url_for('main.index'))
         return func(*args, **kwargs)
     return wrapper
+
+def only_customers(func):
+    # Allow access only if user is a 'customer'.
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        user = session.get('user')
+        if not user:
+            flash('Please log in first.', 'error')
+            return redirect(url_for('main.login'))
+        if user.get('role') != 'customer':
+            flash('This page is available to customers only.', 'error')
+            return redirect(url_for('main.index'))
+        return func(*args, **kwargs)
+    return wrapper

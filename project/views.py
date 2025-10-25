@@ -25,7 +25,7 @@ from project.db import (
     register_account,
     check_for_user_with_hint,
     add_order, 
-    ensure_address
+    ensure_address, can_fulfill_request
 )
 
 from project.session import (
@@ -39,7 +39,7 @@ from project.forms import (
 )
 
 from project.wrappers import (
-    only_admins, only_vendors, only_guests_or_customers, only_guests
+    only_admins, only_vendors, only_guests_or_customers, only_guests, only_customers
 )
 
 
@@ -155,8 +155,8 @@ def item_details(artwork_id):
                 if postcode:
                     session['checkout_postcode'] = postcode
 
-                add_to_cart(artwork_id, quantity, weeks or 1)
-                flash('Added to cart.')
+                if add_to_cart(artwork_id, quantity, weeks or 1):
+                    flash('Added to cart.')
                 return redirect(url_for('main.cart'))
         else:
             extra_errors = True
@@ -270,8 +270,6 @@ def cart_add(artwork_id):
     add_to_cart(artwork_id, qty, weeks)
     return redirect(url_for('main.cart'))
 
-
-
 @bp.post('/cart/clear/')
 def cart_clear():
     empty_cart()
@@ -281,32 +279,44 @@ def cart_clear():
 @bp.post('/cart/update/<int:item_id>/')
 @only_guests_or_customers
 def cart_update(item_id):
-    direction = request.form.get('direction')
-    quantity = request.form.get('quantity', type=int)
-
+    # Optional helper for safe "next" redirects
     def _next_url(default):
-        nxt = request.form.get('next', '').strip()
-        if nxt.startswith('/') and not nxt.startswith('//'):
-            return nxt
-        return default
+        nxt = (request.form.get('next') or '').strip()
+        return nxt if (nxt.startswith('/') and not nxt.startswith('//')) else default
 
+    direction = (request.form.get('direction') or '').strip()   # 'increase' / 'decrease'
+    raw_qty   = request.form.get('quantity', type=int)
+
+    cart = get_cart()
+    line = next((li for li in cart.items if int(li.cartItem_id) == int(item_id)), None)
+    if not line:
+        flash('Item not found in cart.', 'error')
+        return redirect(_next_url(url_for('main.cart')))
+
+    # Decide target quantity
     if direction in ('increase', 'decrease'):
-        base = quantity if quantity and quantity > 0 else 1
-        quantity = base + (1 if direction == 'increase' else -1)
+        base = raw_qty if (raw_qty and raw_qty > 0) else line.quantity
+        desired = base + (1 if direction == 'increase' else -1)
+    else:
+        desired = raw_qty if (raw_qty and raw_qty > 0) else line.quantity
 
-    if quantity is not None:
-        quantity = max(1, min(quantity, 99))
-    
-    if quantity is None or quantity < 1:
-        flash('Invalid quantity. Please enter a valid number.', 'error')
-        return redirect(url_for('main.cart'))
-    
-    if update_cart_item(item_id, quantity):
+    # Clamp to a max range
+    desired = max(1, min(int(desired), 99))
+
+    # Validate against availability/status/max-qty + rental window
+    ok, msg = can_fulfill_request(line.artwork_id, desired, line.rentalDuration)
+    if not ok:
+        flash(msg or 'Unable to set that quantity for this item.', 'warning')
+        return redirect(_next_url(url_for('main.cart')))
+
+    # Persist the new quantity
+    if update_cart_item(item_id, desired):
         flash('Cart updated successfully.')
     else:
         flash('Item not found in cart.', 'error')
-    
+
     return redirect(_next_url(url_for('main.cart')))
+
 
 @bp.post('/cart/remove/<int:item_id>/')
 @only_guests_or_customers
@@ -324,112 +334,56 @@ def cart_remove(item_id):
 
 # Checkout
 @bp.route('/checkout/', methods=['GET', 'POST'])
-@only_guests_or_customers
+@only_customers
 def checkout():
     form = CheckoutForm()
     cart = get_cart()
 
-    # Helpers
-    def _get_customer_id(u: dict | None):
-        #Find a customer id regardless of key naming.
-        u = u or {}
-        for k in ('id', 'customer_id', 'customerID', 'customerId'):
-            v = u.get(k)
-            if v not in (None, ''):
-                try:
-                    return int(v)
-                except Exception:
-                    pass
-        return None
-
-    def _from_user(u: dict, *keys):
-        #Pick the first non-empty value for common contact key variants.
-        for k in keys:
-            v = u.get(k)
-            if v:
-                return v
-        return None
-
-    # Copy Delivery to Billing (no validation, just re-render)
+    # Copy Delivery to Billing (no validation, just reflect on page)
     if request.method == 'POST' and 'copy_delivery' in request.form:
         form.bill_streetNumber.data = (form.del_streetNumber.data or '').strip()
-        form.bill_streetName.data   = (form.del_streetName.data or '').strip()
-        form.bill_city.data         = (form.del_city.data or '').strip()
-        form.bill_state.data        = (form.del_state.data or '').strip()
-        form.bill_postcode.data     = (form.del_postcode.data or '').strip()
-        form.bill_country.data      = (form.del_country.data or '').strip()
+        form.bill_streetName.data   = (form.del_streetName.data   or '').strip()
+        form.bill_city.data         = (form.del_city.data         or '').strip()
+        form.bill_state.data        = (form.del_state.data        or '').strip()
+        form.bill_postcode.data     = (form.del_postcode.data     or '').strip()
+        form.bill_country.data      = (form.del_country.data      or '').strip()
         flash('Copied delivery address into billing.', 'info')
         return render_template('checkout.html', form=form, cart=cart)
 
+    # POST: place order
     if request.method == 'POST':
         if form.validate_on_submit():
-            # Block empty cart
-            if not cart.items or len(cart.items) == 0:
+            # 1) Must have items
+            if not cart.items:
                 flash('Your cart is empty. Please add items before checking out.', 'error')
                 return render_template('checkout.html', form=form, cart=cart)
 
-            # Guests cannot place orders redirect them to register with full prefill
-            u = session.get('user') or {}
-            if u.get('role') != 'customer':
-                session['checkout_prefill'] = {
-                    'firstname': form.firstname.data or '',
-                    'surname':   form.surname.data or '',
-                    'email':     form.email.data or '',
-                    'phone':     form.phone.data or '',
-                    # delivery
-                    'del_streetNumber': form.del_streetNumber.data or '',
-                    'del_streetName':   form.del_streetName.data or '',
-                    'del_city':         form.del_city.data or '',
-                    'del_state':        form.del_state.data or '',
-                    'del_postcode':     form.del_postcode.data or '',
-                    'del_country':      form.del_country.data or '',
-                    # billing
-                    'bill_streetNumber': form.bill_streetNumber.data or '',
-                    'bill_streetName':   form.bill_streetName.data or '',
-                    'bill_city':         form.bill_city.data or '',
-                    'bill_state':        form.bill_state.data or '',
-                    'bill_postcode':     form.bill_postcode.data or '',
-                    'bill_country':      form.bill_country.data or '',
-                    # payment (method only; sensitive fields are re-entered)
-                    'payment_method':    (form.payment_method.data or 'card'),
-                    'paypal_email':      form.paypal_email.data or '',
-                    'wallet_provider':   form.wallet_provider.data or '',
-                    'wallet_reference':  form.wallet_reference.data or '',
-                }
-                session['register_prefill'] = {
-                    'firstname': form.firstname.data or '',
-                    'surname':   form.surname.data or '',
-                    'email':     form.email.data or '',
-                    'phone':     form.phone.data or '',
-                }
-                session['next_after_register'] = url_for('main.checkout')
-                flash('Please register as a customer to place your order. We saved your details.', 'info')
-                return redirect(url_for('main.register', next='checkout'))
+            # 2) Validate each cart line (status, quantity, availability window)
+            for li in cart.items:
+                ok, msg = can_fulfill_request(li.artwork_id, li.quantity, li.rentalDuration)
+                if not ok:
+                    flash(msg or 'This item cannot be checked out at the requested quantity/duration.', 'error')
+                    return redirect(url_for('main.cart'))
 
-            
-            """
-            billing_required = [
-                form.bill_streetNumber.data, form.bill_streetName.data,
-                form.bill_city.data, form.bill_state.data,
-                form.bill_postcode.data, form.bill_country.data
-            ]
-            if not all((v or '').strip() for v in billing_required):
-                flash('Please provide your billing address or click "Same as delivery".', 'error')
-                
-            return render_template('checkout.html', form=form, cart=cart)
-            """
+            # 3) Billing must be present (server-side, regardless of client validators)
+            billing_required = {
+                'Street number': (form.bill_streetNumber.data or '').strip(),
+                'Street name':   (form.bill_streetName.data   or '').strip(),
+                'City':          (form.bill_city.data         or '').strip(),
+                'State':         (form.bill_state.data        or '').strip(),
+                'Postcode':      (form.bill_postcode.data     or '').strip(),
+                'Country':       (form.bill_country.data      or '').strip(),
+            }
+            missing = [label for label, val in billing_required.items() if not val]
+            if missing:
+                if len(missing) == 1:
+                    flash(f'Please provide your billing address — missing: {missing[0]}.', 'error')
+                else:
+                    flash('Please provide your billing address — missing: ' +
+                          ', '.join(missing[:-1]) + f' and {missing[-1]}.', 'error')
+                return render_template('checkout.html', form=form, cart=cart)
 
-            # Ensure only Listed items can be checked out
-            bad = []
-            for li in (cart.items or []):
-                art = get_artwork(li.artwork_id)
-                if (not art) or art.availabilityStatus != 'Listed':
-                    bad.append(li.artwork_id)
-            if bad:
-                flash('One or more items are no longer available (Unlisted/Leased). Please review your cart.', 'error')
-                return redirect(url_for('main.cart'))
-
-            # Deduplicate & attach addresses
+            # 4) Create/dedup addresses
             deliv_id = ensure_address(
                 (form.del_streetNumber.data or '').strip(),
                 (form.del_streetName.data   or '').strip(),
@@ -456,109 +410,58 @@ def checkout():
                 (form.bill_country.data      or 'Australia').strip(),
             )
 
-            # Build and persist order
+            # 5) Build and persist order
             order = convert_cart_to_order(cart)
-            cust_id = _get_customer_id(u)
-            if not getattr(order, 'customer_id', None) and cust_id:
+            user  = session.get('user') or {}
+            cust_id = int(user.get('id') or user.get('customer_id'))
+            if not getattr(order, 'customer_id', None):
                 order.customer_id = cust_id
             order.deliveryAddressID = deliv_id
             order.billingAddressID  = bill_id
-            """
-            payment_method = (form.payment_method.data or 'card').lower()
-            payment_details = {}
-            if payment_method == 'card':
-                card_number_clean = re.sub(r"\D+", "", form.card_number.data or "")
-                payment_details = {
-                    'card_name':      (form.card_name.data or '').strip(),
-                    'card_last4':     card_number_clean[-4:] if len(card_number_clean) >= 4 else '',
-                    'card_expiry':    (form.card_expiry.data or '').strip(),
-                }
-            elif payment_method == 'paypal':
-                payment_details = {
-                    'paypal_email': (form.paypal_email.data or '').strip()
-                }
-            elif payment_method == 'wallet':
-                payment_details = {
-                    'wallet_provider':  (form.wallet_provider.data or '').strip(),
-                    'wallet_reference': (form.wallet_reference.data or '').strip(),
-                }
-            order.paymentMethod = payment_method
-            order.paymentDetails = payment_details
-            """
+
             add_order(order)
             empty_cart()
-            session.pop('checkout_prefill', None)
-            session.pop('checkout_postcode', None)
-            flash('Thank you! Your order is being processed.')
+            flash('Thank you! Your order is being processed.', 'success')
             return redirect(url_for('main.index'))
 
-        # Validation failed
-        flash('Please correct the form and try again.', 'error')
+        # Form didn’t validate, surface first field error clearly
+        first_err = None
+        for field, errs in form.errors.items():
+            if errs:
+                first_err = f"{field.replace('_',' ').title()}: {errs[0]}"
+                break
+        flash(first_err or 'Please correct the form and try again.', 'error')
 
+    # GET: prefill
     else:
-        # GET: contact + delivery prefill for logged-in customers
         u = session.get('user') or {}
+        # Contact from session 
+        form.firstname.data = u.get('firstname') or form.firstname.data
+        form.surname.data   = u.get('surname')   or form.surname.data
+        form.email.data     = u.get('email')     or form.email.data
+        form.phone.data     = u.get('phone')     or form.phone.data
 
-        # 1) Contact from session (handles different key names)
-        if not (form.firstname.data or '').strip():
-            form.firstname.data = _from_user(u, 'firstname', 'first_name', 'firstName', 'given_name', 'givenName') or ''
-        if not (form.surname.data or '').strip():
-            form.surname.data   = _from_user(u, 'surname', 'last_name', 'lastName', 'family_name', 'familyName') or ''
-        if not (form.email.data or '').strip():
-            form.email.data     = _from_user(u, 'email', 'emailAddress', 'mail') or ''
-        if not (form.phone.data or '').strip():
-            form.phone.data     = _from_user(u, 'phone', 'phoneNumber', 'mobile', 'mobile_phone') or ''
+        # Delivery from DB (customer’s saved address)
+        try:
+            cust_id = int(u.get('id') or u.get('customer_id'))
+            row = get_customer_address_details(cust_id)
+            if row:
+                form.del_streetNumber.data = row.get('streetNumber') or ''
+                form.del_streetName.data   = row.get('streetName')   or ''
+                form.del_city.data         = row.get('city')         or ''
+                form.del_state.data        = row.get('state')        or ''
+                form.del_postcode.data     = row.get('postcode')     or ''
+                form.del_country.data      = row.get('country')      or ''
+        except Exception:
+            pass
 
-        # 2) Delivery address from DB for logged-in customers
-        cust_id = _get_customer_id(u)
-        is_customer = (u.get('role') == 'customer' or u.get('type') == 'customer')
-        if is_customer and cust_id:
-            try:
-                row = get_customer_address_details(cust_id)
-                if row:
-                    form.del_streetNumber.data = row.get('streetNumber') or ''
-                    form.del_streetName.data   = row.get('streetName')   or ''
-                    form.del_city.data         = row.get('city')         or ''
-                    form.del_state.data        = row.get('state')        or ''
-                    form.del_postcode.data     = row.get('postcode')     or ''
-                    form.del_country.data      = row.get('country')      or ''
-            except Exception:
-                pass
-
-        # 3) Overlay any saved inputs from a previous attempt (guest -> register -> back)
-        pf = session.get('checkout_prefill') or {}
-        if pf:
-            # contact
-            if pf.get('firstname'):        form.firstname.data        = pf['firstname']
-            if pf.get('surname'):          form.surname.data          = pf['surname']
-            if pf.get('email'):            form.email.data            = pf['email']
-            if pf.get('phone'):            form.phone.data            = pf['phone']
-            # delivery
-            if pf.get('del_streetNumber'): form.del_streetNumber.data = pf['del_streetNumber']
-            if pf.get('del_streetName'):   form.del_streetName.data   = pf['del_streetName']
-            if pf.get('del_city'):         form.del_city.data         = pf['del_city']
-            if pf.get('del_state'):        form.del_state.data        = pf['del_state']
-            if pf.get('del_postcode'):     form.del_postcode.data     = pf['del_postcode']
-            if pf.get('del_country'):      form.del_country.data      = pf['del_country']
-            # billing (optional to re-show)
-            if pf.get('bill_streetNumber'): form.bill_streetNumber.data = pf['bill_streetNumber']
-            if pf.get('bill_streetName'):   form.bill_streetName.data   = pf['bill_streetName']
-            if pf.get('bill_city'):         form.bill_city.data         = pf['bill_city']
-            if pf.get('bill_state'):        form.bill_state.data        = pf['bill_state']
-            if pf.get('bill_postcode'):     form.bill_postcode.data     = pf['bill_postcode']
-            if pf.get('bill_country'):      form.bill_country.data      = pf['bill_country']
-            # payment preferences (non-sensitive)
-            if pf.get('payment_method'):    form.payment_method.data    = pf['payment_method']
-            if pf.get('paypal_email'):      form.paypal_email.data      = pf['paypal_email']
-            if pf.get('wallet_provider'):   form.wallet_provider.data   = pf['wallet_provider']
-            if pf.get('wallet_reference'):  form.wallet_reference.data  = pf['wallet_reference']
-
-        # 4) Apply postcode hint LAST so it overrides DB prefill (if present)
+        # Optional: postcode hint override
         pc_hint = (session.get('checkout_postcode') or '').strip()
         if pc_hint:
             form.del_postcode.data = pc_hint
 
     return render_template('checkout.html', form=form, cart=cart)
+
 
 # Authentication
 @bp.route('/register/', methods=['GET', 'POST'])

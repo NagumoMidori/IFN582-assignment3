@@ -59,7 +59,8 @@
                 <i class="bi bi-cart"></i> Cart
               </a>
             </li>
-
+            {% endif %}
+            {% if session.get('user') and session['user'].get('role') == 'customer' %}
             <li class="nav-item">
               <a class="nav-link {% if active_page=='checkout' %}active{% endif %}"
                 href="{{ url_for('main.checkout') }}"><i class="bi bi-credit-card"></i> Checkout</a>
@@ -73,6 +74,10 @@
               <a class="nav-link {% if active_page=='login' %}active{% endif %}"
                 href="{{ url_for('main.login') }}">Login</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link {% if active_page=='register' %}active{% endif %}"
+                href="{{ url_for('main.register') }}">Register</a>
+            </li>
             {% endif %}
             {% if session.get('user') and session['user'].get('role') == 'vendor' or session.get('user') and
             session['user'].get('role') == 'customer' or session.get('user') and session['user'].get('role') == 'admin'
@@ -84,7 +89,7 @@
             {% endif %}
 
           </ul>
-
+          
           <form class="d-flex" role="search" action="{{ url_for('main.index') }}" method="get">
             <label for="siteSearch" class="visually-hidden">Search site</label>
             <input id="siteSearch" name="q" class="form-control me-2" type="search" placeholder="Search">

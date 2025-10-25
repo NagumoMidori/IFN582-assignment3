@@ -1,5 +1,5 @@
 from flask import session
-from project.db import get_artwork
+from project.db import get_artwork, can_fulfill_request
 from project.models import Cart, CartItem, Order, OrderItem, OrderStatus
 from decimal import Decimal
 
@@ -25,6 +25,7 @@ def get_cart() -> Cart:
             rentalDuration=row.get('rentalDuration') or 1,
             artwork=artwork
         ))
+    _attach_cart_item_ids(cart)    
     return cart
 
 
@@ -39,27 +40,93 @@ def _save_cart(cart: Cart) -> None:
     }
     session.modified = True
 
+def add_to_cart(artwork_id: int, quantity: int, weeks: int) -> bool:
+    #Only add the item to the cart if it passes the validation
+    q = max(1, int(quantity or 1))
+    w = max(1, int(weeks or 1))
 
-def add_to_cart(artwork_id: int, quantity: int = 1, rental_duration: int = 1) -> bool:
-    cart = get_cart()
-    artwork = get_artwork(artwork_id)
-    if not artwork:
-        return False
+    data = session.get("cart") or {"items": []}
+    items = data.setdefault("items", [])
 
-    quantity = max(1, quantity or 1)
-    rental_duration = max(1, rental_duration or 1)
-    next_id = max((item.cartItem_id or 0 for item in cart.items), default=0) + 1
+    # find existing line with same artwork + same duration
+    idx = -1
+    for i, row in enumerate(items):
+        rid = row.get("artwork_id")
+        rw  = row.get("rentalDuration") or row.get("weeks")  # tolerate older key name
+        if rid == artwork_id and int(rw or 0) == w:
+            idx = i
+            break
 
-    cart.items.append(CartItem(
-        cartItem_id=next_id,
-        cart_id=0,
-        artwork_id=artwork.artwork_id,
-        quantity=quantity,
-        rentalDuration=rental_duration,
-        artwork=artwork
-    ))
-    _save_cart(cart)
+    if idx >= 0:
+        # validate AFTER-MERGE quantity
+        new_qty = int(items[idx].get("quantity", 1)) + q
+        ok, msg = can_fulfill_request(artwork_id, new_qty, w)
+        if not ok:
+            _flash_safe(msg or "Requested quantity exceeds availability.", "warning")
+            return False
+        items[idx]["quantity"] = new_qty
+    else:
+        # validate for new line, flashes any errors
+        ok, msg = can_fulfill_request(artwork_id, q, w)
+        if not ok:
+            _flash_safe(msg or "This item can't be added with the selected quantity/duration.", "warning")
+            return False
+        # write a simple dict; get_cart() will rehydrate to CartItem
+        items.append({
+            "artwork_id": artwork_id,
+            "quantity": q,
+            "rentalDuration": w,  # prefer this key going forward
+        })
+
+    # persist back to session
+    session["cart"] = data
+    session.modified = True
     return True
+
+def _attach_cart_item_ids(cart):
+    """
+    It gives every cart row a stable ID (its list position) 
+    so templates and routes know exactly which line item to update or remove.
+    """
+    raw_items = None
+    try:
+        from flask import session as _s
+        raw_items = (_s.get("cart") or {}).get("items", None)
+    except Exception:
+        pass
+
+    for idx, li in enumerate(getattr(cart, "items", []) or []):
+        # attribute for object access
+        try:
+            setattr(li, "cartItem_id", idx)
+        except Exception:
+            pass
+
+        # keep dict key in the raw session too (Jinja also treats dict keys as attributes)
+        if isinstance(raw_items, list):
+            try:
+                row = raw_items[idx]
+                if isinstance(row, dict):
+                    row["cartItem_id"] = idx
+            except Exception:
+                pass
+
+    # mark session modified if we touched raw dicts (safe no-op if not)
+    try:
+        from flask import session as _s
+        _s.modified = True
+    except Exception:
+        pass
+
+
+def _flash_safe(message: str, category: str = "warning"):
+    # Fail safe in case the flash function fails inside the add to cart function
+    try:
+        from flask import flash
+        flash(message, category)
+    except Exception:
+        # no request context; just skip flashing
+        pass
 
 
 def remove_from_cart(item_id: int) -> bool:

@@ -79,11 +79,13 @@
       <div class="col-12 col-md-3">
         <label for="sort" class="form-label mb-0">Sort</label>
         <select id="sort" name="sort" class="form-select">
-          <option value="latest" {{ 'selected' if filters.get('sort') == 'latest' else '' }}>Latest</option>
-          <option value="oldest" {{ 'selected' if filters.get('sort') == 'oldest' else '' }}>Oldest</option>
-          <option value="price_asc" {{ 'selected' if filters.get('sort') == 'price_asc' else '' }}>Lowest price first</option>
-          <option value="price_desc" {{ 'selected' if filters.get('sort') == 'price_desc' else '' }}>Highest price first</option>
-          <option value="title" {{ 'selected' if filters.get('sort') == 'title' else '' }}>Title (A–Z)</option>
+          <option value="latest" {{ 'selected' if filters.get('sort')=='latest' else '' }}>Latest</option>
+          <option value="oldest" {{ 'selected' if filters.get('sort')=='oldest' else '' }}>Oldest</option>
+          <option value="price_asc" {{ 'selected' if filters.get('sort')=='price_asc' else '' }}>Lowest price first
+          </option>
+          <option value="price_desc" {{ 'selected' if filters.get('sort')=='price_desc' else '' }}>Highest price first
+          </option>
+          <option value="title" {{ 'selected' if filters.get('sort')=='title' else '' }}>Title (A–Z)</option>
         </select>
       </div>
       <div class="col-12 col-md-3">
@@ -101,8 +103,8 @@
         <select id="category" name="category_id" class="form-select">
           <option value="">All categories</option>
           {% for category in categories %}
-          <option value="{{ category.category_id }}"
-            {{ 'selected' if filters.get('category_id') == category.category_id else '' }}>
+          <option value="{{ category.category_id }}" {{ 'selected' if filters.get('category_id')==category.category_id
+            else '' }}>
             {{ category.categoryName }}
           </option>
           {% endfor %}
@@ -127,6 +129,10 @@
               {{ (item.itemDescription or '')[:220] }}{% if item.itemDescription and item.itemDescription|length > 220
               %}…{% endif %}
             </p>
+            <div class="small mb-2">
+              <a href="{{ url_for('main.category_items', category_id=item.category_id) }}"
+                class=" item__details text-reset">{{item.categoryName}}</a>
+            </div>
             <a href="{{ url_for('main.item_details', artwork_id=item.artwork_id) }}"
               class="item__details text-reset">Item details</a>
             <p class="py-2">AUD {{ '%.2f'|format(item.pricePerWeek) }}</p>
@@ -145,30 +151,6 @@
       {% endfor %}
     </div>
   </div>
-
-  {# (Optional) pagination shell #}
-  <div class="d-flex justify-content-center mx-auto pb-4">
-    <nav aria-label="Page navigation">
-      <ul class="pagination d-flex justify-content-center">
-        <li class="page-item">
-          <a href="#" class="page-link custom__page__link">Previous</a>
-        </li>
-        <li class="page-item active">
-          <a class="page-link custom__page__link" href="#" aria-current="page">1</a>
-        </li>
-        <li class="page-item">
-          <a class="page-link custom__page__link" href="#">2</a>
-        </li>
-        <li class="page-item">
-          <a class="page-link custom__page__link" href="#">3</a>
-        </li>
-        <li class="page-item">
-          <a class="page-link custom__page__link" href="#">Next</a>
-        </li>
-      </ul>
-    </nav>
-  </div>
-</section>
 
 <section class="pb-4 payment__method__colour">
   <h2 class="text-center py-3">Payment Methods</h2>
