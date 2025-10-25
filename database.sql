@@ -134,21 +134,21 @@ INSERT INTO customers (customer_id, email, phone, customer_password, firstName, 
 
 INSERT INTO artworks (artwork_id, vendor_id, category_id, title, itemDescription, pricePerWeek, imageLink, availabilityStartDate, availabilityEndDate, maxQuantity, availabilityStatus)
 VALUES
-(1,1,1,'River Flow','Acrylic on canvas',30,'/img/a001.jpg','2025-03-01','2025-12-11',1,'Listed'),
-(2,1,1,'Blue Currents','Mixed paintings',55,'/img/a002.jpg','2025-07-29','2025-08-30',1,'Listed'),
-(3,1,2,'Evening Light','Drawing with oil markers',25,'/img/a003.jpg','2025-05-05','2025-12-31',1,'Listed'),
-(4,1,1,'Harbour Mist','Acrylic on canvas',32,'/img/a004.jpg','2025-06-01','2025-12-31',1,'Listed'),
-(5,1,1,'Seagrass','Oil on canvas',40,'/img/a005.jpg','2025-06-15','2025-12-31',1,'Listed'),
-(6,1,1,'Sunrise Lane','Oil on board',28,'/img/a006.jpg','2025-06-20','2025-12-31',1,'Listed'),
-(7,1,6,'Bush Track','Acrylic on canvas and picture',22,'/img/a007.jpg','2025-07-01','2025-12-31',1,'Listed'),
-(8,1,3,'Glasshouse','Taken at Brisbane Botanical Gardens',48,'/img/a008.jpg','2025-07-05','2025-12-31',1,'Listed'),
-(9,2,4,'Stone Arc','Carved sandstone',45,'/img/a009.jpg','2025-06-03','2025-12-31',1,'Listed'),
-(10,2,4,'Copper Wave','Cold-forged copper',38,'/img/a010.jpg','2025-06-10','2025-12-31',1,'Listed'),
-(11,2,3,'Timber Form','Snapshot from a Reclaimed timber sculpture',26,'/img/a011.jpg','2025-06-25','2025-12-31',1,'Listed'),
-(12,2,4,'Marble Fold','White marble',60,'/img/a012.jpg','2025-07-02','2025-12-31',1,'Listed'),
-(13,1,3,'Story Bridge Dawn','A striking steel cantilever bridge spans a wide river in Brisbane, showcasing intricate latticework and bold engineering. Below, a motorboat cuts through the water, leaving a crisp wake. Urban buildings and lush greenery line both shores, blending nature with infrastructure. The sky is clear with wispy clouds, adding depth to this dynamic cityscape.',15,'/img/a013.jpg','2025-05-05','2025-12-31',999,'Listed'),
-(14,1,3,'Night City Print','Taken from Kangaroo Point',11,'/img/a014.jpg','2025-06-11','2025-12-11',999,'Listed'),
-(15,2,3,'Portrait Session 1hr','Studio portrait booking',120,'/img/a015.jpg','2025-07-15','2025-12-31',10,'Listed');
+(1,1,1,'River Flow','Acrylic on canvas',30,'/img/a001.jpg','2025-03-01','2026-01-12',1,'Listed'),
+(2,1,1,'Blue Currents','Mixed paintings',55,'/img/a002.jpg','2025-07-29','2026-03-05',1,'Listed'),
+(3,1,2,'Evening Light','Drawing with oil markers',25,'/img/a003.jpg','2025-05-05','2026-02-28',1,'Listed'),
+(4,1,1,'Harbour Mist','Acrylic on canvas',32,'/img/a004.jpg','2025-06-01','2026-06-30',1,'Listed'),
+(5,1,1,'Seagrass','Oil on canvas',40,'/img/a005.jpg','2025-06-15','2026-04-18',1,'Listed'),
+(6,1,1,'Sunrise Lane','Oil on board',28,'/img/a006.jpg','2025-06-20','2026-05-10',1,'Listed'),
+(7,1,6,'Bush Track','Acrylic on canvas and picture',22,'/img/a007.jpg','2025-07-01','2026-03-25',1,'Listed'),
+(8,1,3,'Glasshouse','Taken at Brisbane Botanical Gardens',48,'/img/a008.jpg','2025-07-05','2026-08-14',1,'Listed'),
+(9,2,4,'Stone Arc','Carved sandstone',45,'/img/a009.jpg','2025-06-03','2026-04-05',1,'Listed'),
+(10,2,4,'Copper Wave','Cold-forged copper',38,'/img/a010.jpg','2025-06-10','2026-09-30',1,'Listed'),
+(11,2,3,'Timber Form','Snapshot from a Reclaimed timber sculpture',26,'/img/a011.jpg','2025-06-25','2026-02-05',1,'Listed'),
+(12,2,4,'Marble Fold','White marble',60,'/img/a012.jpg','2025-07-02','2026-07-22',1,'Listed'),
+(13,1,3,'Story Bridge Dawn','A striking steel cantilever bridge spans a wide river in Brisbane, showcasing intricate latticework and bold engineering. Below, a motorboat cuts through the water, leaving a crisp wake. Urban buildings and lush greenery line both shores, blending nature with infrastructure. The sky is clear with wispy clouds, adding depth to this dynamic cityscape.',15,'/img/a013.jpg','2025-05-05','2026-10-15',999,'Listed'),
+(14,1,3,'Night City Print','Taken from Kangaroo Point',11,'/img/a014.jpg','2025-06-11','2026-01-25',999,'Listed'),
+(15,2,3,'Portrait Session 1hr','Studio portrait booking',120,'/img/a015.jpg','2025-07-15','2026-06-12',10,'Listed');
 
 INSERT INTO orders (order_id, customer_id, orderStatus, orderDate, billingAddressID, deliveryAddressID)
 VALUES (1, 1, 'Confirmed', '2025-08-10 10:00:00', 3, 3);
@@ -167,4 +167,3 @@ VALUES (3, 1, 'Confirmed', '2025-08-15 14:30:00', 3, 3);
 
 INSERT INTO order_item (orderItem_id, order_id, artwork_id, quantity, rentalDuration, unitPrice)
 VALUES (3, 3, 13, 1, 1, 15.00);    
-

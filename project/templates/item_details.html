@@ -30,6 +30,25 @@
           action="{{ url_for('main.item_details', artwork_id=item.artwork_id) }}">
           {{ form.hidden_tag() if form is defined }}
           <div class="mb-3">
+            {% if item and (item.availabilityStartDate or item.availabilityEndDate) %}
+            <div class="bg-body-secondary-subtle border-top border-bottom border-2 mb-3" style="border-color: #f7c8dd !important;">
+              <div class="d-flex align-items-center gap-3 px-3 py-2">
+                <span class="fs-5 mb-0" style="color: #b25d87;"><i class="bi bi-calendar-event"></i></span>
+                <div class="small mb-0">
+                  <div class="text-uppercase fw-semibold" style="color: #8a4868;">Availability</div>
+                  <div class="text-secondary" style="color: #8a4868 !important;">
+                    {% if item.availabilityStartDate and item.availabilityEndDate %}
+                      {{ item.availabilityStartDate.strftime('%d %b %Y') }} — {{ item.availabilityEndDate.strftime('%d %b %Y') }}
+                    {% elif item.availabilityStartDate %}
+                      From {{ item.availabilityStartDate.strftime('%d %b %Y') }}
+                    {% elif item.availabilityEndDate %}
+                      Until {{ item.availabilityEndDate.strftime('%d %b %Y') }}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
             <div class="col-12 col-sm-auto col-form-label colour__display fw-bold">Duration</div>
             {% for subfield in form.durationPreset %}
               {% if loop.first %}
