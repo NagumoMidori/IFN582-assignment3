@@ -11,7 +11,7 @@ def create_app():
 
     # MySQL configurations
     app.config['MYSQL_USER'] = 'root'
-    app.config['MYSQL_PASSWORD'] = 'administrador'   # <-- change to your local password
+    app.config['MYSQL_PASSWORD'] = 'mysqlroot'   # <-- change to your local password
     app.config['MYSQL_DB'] = 'assessment3_group4'       
     app.config['MYSQL_HOST'] = 'localhost'
     app.config['MYSQL_CURSORCLASS'] = 'DictCursor'

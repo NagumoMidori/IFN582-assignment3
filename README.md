@@ -40,3 +40,19 @@ Start the Flask application with:
 python run.py
 ```
 The development server runs on `http://127.0.0.1:8888/` by default. If you make changes to the source code, Flask reloads automatically while `app.debug` remains enabled.
+
+## Test Accounts
+
+Here are some test accounts you can use to explore the application:
+
+*   **Admin User**
+    *   **Username:** `admin1`
+    *   **Password:** `123456`
+
+*   **Vendor User**
+    *   **Email:** `loremipsum@project582.com`
+    *   **Password:** `123456`
+
+*   **Customer User**
+    *   **Email:** `dusty@example.com`
+    *   **Password:** `123456`
